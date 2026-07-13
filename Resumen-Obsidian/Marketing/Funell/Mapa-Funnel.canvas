@@ -1,0 +1,15 @@
+{
+	"nodes":[
+		{"id":"670227288025913b","type":"file","file":"Marketing/Funell/2 - Descubrimiento.md","x":-640,"y":-240,"width":1739,"height":400,"color":"4"},
+		{"id":"6d052bd5b0700bce","type":"file","file":"Marketing/Funell/3 - Consideración.md","x":-530,"y":280,"width":1520,"height":320,"color":"3"},
+		{"id":"b2e64edd3fd85841","type":"file","file":"Marketing/Funell/4 - Conversión.md","x":-468,"y":800,"width":1395,"height":400,"color":"1"},
+		{"id":"6e30463c52acdb25","type":"file","file":"Marketing/Funell/1 - Conciencia.md","x":-810,"y":-760,"width":2080,"height":360,"color":"5"},
+		{"id":"a74d999c05cb34b5","type":"file","file":"Marketing/Funell/5 - Retencion.md","x":-250,"y":1440,"width":960,"height":400,"color":"6"}
+	],
+	"edges":[
+		{"id":"51a874605862bf50","fromNode":"6e30463c52acdb25","fromSide":"bottom","toNode":"670227288025913b","toSide":"top"},
+		{"id":"af06593183bb2104","fromNode":"670227288025913b","fromSide":"bottom","toNode":"6d052bd5b0700bce","toSide":"top"},
+		{"id":"6ca49c2715fbe7bd","fromNode":"6d052bd5b0700bce","fromSide":"bottom","toNode":"b2e64edd3fd85841","toSide":"top"},
+		{"id":"dbb39747765710d2","fromNode":"b2e64edd3fd85841","fromSide":"bottom","toNode":"a74d999c05cb34b5","toSide":"top"}
+	]
+}

@@ -1,0 +1,225 @@
+{
+  "main": {
+    "id": "4f6004de45699768",
+    "type": "split",
+    "children": [
+      {
+        "id": "2a9daeadda74d8c8",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "36b57a1800fb6458",
+            "type": "leaf",
+            "state": {
+              "type": "canvas",
+              "state": {
+                "file": "Posibles metricas.canvas",
+                "viewState": {
+                  "x": -146.78889161091297,
+                  "y": -798.2247856100354,
+                  "zoom": -0.9160781072539725
+                }
+              },
+              "icon": "lucide-layout-dashboard",
+              "title": "Posibles metricas"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "884e79ab68bd4d6e",
+    "type": "split",
+    "children": [
+      {
+        "id": "20ff8071eb99fdfb",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "d4427e3f38e5f669",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {
+                "sortOrder": "alphabetical",
+                "autoReveal": false
+              },
+              "icon": "lucide-folder-closed",
+              "title": "Explorador de archivos"
+            }
+          },
+          {
+            "id": "690b0c1be140853e",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              },
+              "icon": "lucide-search",
+              "title": "Buscar"
+            }
+          },
+          {
+            "id": "44f2b2686e821934",
+            "type": "leaf",
+            "state": {
+              "type": "bookmarks",
+              "state": {},
+              "icon": "lucide-bookmark",
+              "title": "Marcadores"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 200
+  },
+  "right": {
+    "id": "6f7af987d094c1e9",
+    "type": "split",
+    "children": [
+      {
+        "id": "3bc307257a0a987b",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "4a543bab7e8d063e",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "file": "Bienvenido.md",
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-coming-in",
+              "title": "Enlaces entrantes de Bienvenido"
+            }
+          },
+          {
+            "id": "43327185b979e3d5",
+            "type": "leaf",
+            "state": {
+              "type": "outgoing-link",
+              "state": {
+                "file": "Bienvenido.md",
+                "linksCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-going-out",
+              "title": "Enlaces salientes de Bienvenido"
+            }
+          },
+          {
+            "id": "ab240b2dc260bffb",
+            "type": "leaf",
+            "state": {
+              "type": "tag",
+              "state": {
+                "sortOrder": "frequency",
+                "useHierarchy": true,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-tags",
+              "title": "Etiquetas"
+            }
+          },
+          {
+            "id": "391bd849ad343b55",
+            "type": "leaf",
+            "state": {
+              "type": "all-properties",
+              "state": {
+                "sortOrder": "frequency",
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-archive",
+              "title": "Todas las propiedades"
+            }
+          },
+          {
+            "id": "7634f4833240a82f",
+            "type": "leaf",
+            "state": {
+              "type": "outline",
+              "state": {
+                "file": "Bienvenido.md",
+                "followCursor": false,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-list",
+              "title": "Esquema de Bienvenido"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300,
+    "collapsed": true
+  },
+  "left-ribbon": {
+    "hiddenItems": {
+      "switcher:Abrir selector rápido": false,
+      "graph:Abrir vista gráfica": false,
+      "canvas:Crear nuevo lienzo": false,
+      "daily-notes:Abrir la nota de hoy": false,
+      "templates:Insertar plantilla": false,
+      "command-palette:Abrir paleta de comandos": false,
+      "bases:Crear nueva base": false,
+      "obsidian-excalidraw-plugin:Nuevo Bosquejo": false,
+      "templater-obsidian:Templater": false
+    }
+  },
+  "active": "36b57a1800fb6458",
+  "lastOpenFiles": [
+    "Puntos a Trackear.canvas",
+    "Posibles metricas.canvas",
+    "Comportamiento de Usuarios/Web Usage Mining.md",
+    "Marketing/Funell/1 - Conciencia.md",
+    "Marketing/Glosario de Marketing.canvas",
+    "Comportamiento de Usuarios/Paginas Citadas.md",
+    "Marketing/Funell/Mapa-Funnel.canvas",
+    "Comportamiento de Usuarios/User Behavior Mining  - A Research Agenda.md",
+    "Marketing/Funell/4 - Conversión.md",
+    "Marketing/Funell/3 - Consideración.md",
+    "Marketing/Funell/2 - Descubrimiento.md",
+    "Marketing/Funell/5 - Retencion.md",
+    "Real‑time user clickstream behavior analysis based on apache storm streaming.md",
+    "Comportamiento de Usuarios/Drawing 2026-07-08 19.37.04.excalidraw.md",
+    "Comportamiento de Usuarios/Img/Pasted image 20260708193557.png",
+    "Comportamiento de Usuarios/Img/Pasted image 20260708144714.png",
+    "Comportamiento de Usuarios/Img",
+    "Comportamiento de Usuarios/Img/Pasted image 20260708190725.png",
+    "Comportamiento de Usuarios/Img/Pasted image 20260708173203.png",
+    "Comportamiento de Usuarios/Interaccion con el contenido.md",
+    "Comportamiento de Usuarios/Visualizacion.md",
+    "Comportamiento de Usuarios/Tasas de rebote.md",
+    "Comportamiento de Usuarios/Tasa de conversion.md",
+    "Comportamiento de Usuarios/Interaccion con formularios.md",
+    "Bienvenido.md",
+    "Comportamiento de Usuarios/Tasa de clics.md",
+    "Marketing/Sin título.md",
+    "Marketing/Funell",
+    "Comportamiento de Usuarios",
+    "Marketing",
+    "Sin título.base"
+  ]
+}

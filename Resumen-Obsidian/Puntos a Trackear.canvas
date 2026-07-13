@@ -1,0 +1,13 @@
+{
+	"nodes":[
+		{"id":"2f841496594884c3","type":"text","text":"PageView","x":-260,"y":-300,"width":250,"height":60,"color":"4"},
+		{"id":"6b21e55336980ed9","type":"text","text":"Sesion","x":-260,"y":-180,"width":250,"height":60,"color":"4"},
+		{"id":"0ea3a15359734d67","type":"text","text":"Clicks","x":-260,"y":-60,"width":250,"height":60,"color":"4"},
+		{"id":"a45eb69b50771555","type":"text","text":"Scroll Depth","x":-260,"y":40,"width":250,"height":60,"color":"4"},
+		{"id":"83baf52d2371df29","type":"text","text":"Hover","x":-260,"y":160,"width":250,"height":60,"color":"4"},
+		{"id":"bd8439922dbe5418","type":"text","text":"Formularios","x":-260,"y":260,"width":250,"height":60,"color":"4"},
+		{"id":"cca0dd76b2494533","type":"text","text":"Dispositivo","x":-260,"y":380,"width":250,"height":60,"color":"4"},
+		{"id":"46b52a1fc66aaa45","type":"text","text":"EVENTOS OBJETIVO","x":240,"y":-300,"width":250,"height":60,"color":"2"}
+	],
+	"edges":[]
+}
