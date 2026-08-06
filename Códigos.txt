@@ -1,0 +1,564 @@
+##############################################################
+######## PageViews - Por página y sitio ######################
+##############################################################
+db.eventos.aggregate([
+  { $match: { "metadata.tipo": "pageview" } },
+  {
+    $group: {
+      _id: { siteId: "$metadata.siteId", pagina: "$metadata.pagina" },
+      totalPageviews: { $sum: 1 }
+    }
+  }
+]).forEach(function(r) {
+  db.metricas_resumen.updateOne(
+    { _id: r._id.siteId + "_" + r._id.pagina.replace(/\//g, "") },
+    {
+      $set: {
+        siteId: r._id.siteId,
+        pagina: r._id.pagina,
+        pageviews: r.totalPageviews,
+        fechaGeneracion: new Date()
+      }
+    },
+    { upsert: true }
+  );
+});
+
+##############################################################
+######## ScrollDepth promedio - Por página y sitio ###########
+##############################################################
+
+db.eventos.aggregate([
+  { $match: { "metadata.tipo": "scroll" } },
+  { $group: { _id: { siteId: "$metadata.siteId", pagina: "$metadata.pagina" }, 
+	scrollDepthPromedio: { $avg: "$valor" } } }
+]).forEach(function (r) {
+  db.metricas_resumen.updateOne(
+    { _id: r._id.siteId + "_" + r._id.pagina.replace(/\//g, "") },
+    { $set: { scrollDepthPromedio: r.scrollDepthPromedio } },
+    { upsert: true }
+  );
+});
+
+##############################################################
+############ Clicks muertos por pagina y sitio ###############
+##############################################################
+
+db.eventos.aggregate([
+  { $match: { "metadata.tipo": "click", "metadata.elemento": "texto_descripcion" } },
+  { $group: { _id: { siteId: "$metadata.siteId", pagina: "$metadata.pagina" }, 
+	clicksMuertos: { $sum: 1} } }
+]).forEach(function (r) {
+  db.metricas_resumen.updateOne(
+    { _id: r._id.siteId + "_" + r._id.pagina.replace(/\//g, "") },
+    { $set: { clicksMuertos: r.clicksMuertos } },
+    { upsert: true }
+  );
+});
+
+##############################################################
+########### Hover promedio por elemento por sitio ############ 
+##############################################################
+
+db.eventos.aggregate([
+  { $match: { "metadata.tipo": "hover" } },
+  { $group: { _id: { siteId: "$metadata.siteId", pagina: "$metadata.pagina", elemento: "$metadata.elemento" }, 
+	hoverPromedio: { $avg: "$valor" } } }
+]).forEach(function (r) {
+
+  db.metricas_resumen.updateOne(
+    { _id: r._id.siteId + "_" + r._id.pagina + "_" + r._id.elemento },
+    { $set: { hoverPromedio: r.hoverPromedio } },
+    { upsert: true }
+  );
+});
+
+##############################################################
+############ RageClicks por página por sitio #################
+##############################################################
+
+const ventanaSegundos = 1.5;
+
+db.eventos.aggregate([
+  { $match: { "metadata.tipo": "click" } },
+  { $sort: { timestamp: 1 } },
+  {
+    $group: {
+      _id: {
+        siteId: "$metadata.siteId",
+        sessionId: "$metadata.sessionId",
+        elemento: "$metadata.elemento",
+        pagina: "$metadata.pagina"
+      },
+      timestamps: { $push: "$timestamp" }
+    }
+  },
+  {
+    $project: {
+      siteId: "$_id.siteId",
+      pagina: "$_id.pagina",
+      clusters: {
+        $reduce: {
+          input: { $slice: ["$timestamps", 1, { $size: "$timestamps" }] },
+          initialValue: {
+            clusterActual: [{ $arrayElemAt: ["$timestamps", 0] }],
+            clustersCompletos: []
+          },
+          in: {
+            $let: {
+              vars: { ultimoDelCluster: { $arrayElemAt: ["$$value.clusterActual", -1] } },
+              in: {
+                $cond: {
+                  if: {
+                    $lte: [
+                      { $divide: [{ $subtract: ["$$this", "$$ultimoDelCluster"] }, 1000] },
+                      ventanaSegundos
+                    ]
+                  },
+                  then: {
+                    clusterActual: { $concatArrays: ["$$value.clusterActual", ["$$this"]] },
+                    clustersCompletos: "$$value.clustersCompletos"
+                  },
+                  else: {
+                    clusterActual: ["$$this"],
+                    clustersCompletos: {
+                      $concatArrays: ["$$value.clustersCompletos", [{ $size: "$$value.clusterActual" }]]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  {
+    $project: {
+      siteId: 1,
+      pagina: 1,
+      todosLosClusters: {
+        $concatArrays: ["$clusters.clustersCompletos", [{ $size: "$clusters.clusterActual" }]]
+      }
+    }
+  },
+  {
+    $project: {
+      siteId: 1,
+      pagina: 1,
+      rageClicksDetectados: {
+        $size: { $filter: { input: "$todosLosClusters", as: "t", cond: { $gte: ["$$t", 2] } } }
+      }
+    }
+  },
+  {
+    $group: {
+      _id: { siteId: "$siteId", pagina: "$pagina" },
+      totalRageClicks: { $sum: "$rageClicksDetectados" }
+    }
+  }
+]).forEach(function(r) {
+  const idDoc = r._id.siteId + "_" + r._id.pagina.replace(/\//g, "");
+  db.metricas_resumen.updateOne(
+    { _id: idDoc },
+    {
+      $set: {
+        siteId: r._id.siteId,
+        nivel: "pagina",
+        pagina: r._id.pagina,
+        rageClicks: r.totalRageClicks,
+        fechaGeneracion: new Date()
+      }
+    },
+    { upsert: true }
+  );
+});
+
+#########################################################################
+########### Tiempo promedio de sesiones en páginas por sitio ############
+#########################################################################
+
+db.sesiones.aggregate([
+{ $match: { fin: { $exists: true, $ne: null } } },
+  {
+    $project: {
+      siteId: 1,
+      paginas: "$rutas.pagina",
+      timestamps: { $concatArrays: ["$rutas.timestamp", ["$fin"]] }
+    }
+  },
+  {
+    $project: {
+      siteId: 1,
+      pares: {
+        $map: {
+          input: { $range: [0, { $size: "$paginas" }] },
+          as: "i",
+          in: {
+            pagina: { $arrayElemAt: ["$paginas", "$$i"] },
+            duracionSegundos: {
+              $divide: [
+                { $subtract: [
+                  { $arrayElemAt: ["$timestamps", { $add: ["$$i", 1] }] },
+                  { $arrayElemAt: ["$timestamps", "$$i"] }
+                ]},
+                1000
+              ]
+            }
+          }
+        }
+      }
+    }
+  },
+  { $unwind: "$pares" },
+  {
+    $group: {
+      _id: { siteId: "$siteId", pagina: "$pares.pagina" },
+      tiempoPromedioPagina: { $avg: "$pares.duracionSegundos" }
+    }
+  }
+]).forEach(function(r) {
+  const idDoc = r._id.siteId + "_" + r._id.pagina.replace(/\//g, "");
+  db.metricas_resumen.updateOne(
+    { _id: idDoc },
+    {
+      $set: {
+        siteId: r._id.siteId,
+        nivel: "pagina",
+        pagina: r._id.pagina,
+        tiempoPromedioPagina: r.tiempoPromedioPagina,
+        fechaGeneracion: new Date()
+      }
+    },
+    { upsert: true }
+  );
+});
+
+#########################################################################
+############### Tasa de abandono por formulario por sitio ###############
+#########################################################################
+
+db.formularios.aggregate([
+  {
+    $group: {
+      _id: { siteId: "$siteId", formId: "$formId" },
+      total: { $sum: 1 },
+      abandonados: { $sum: { $cond: [{ $eq: ["$completado", false] }, 1, 0] } }
+    }
+  },
+  {
+    $project: {
+      siteId: "$_id.siteId",
+      formId: "$_id.formId",
+      tasaAbandono: { $divide: ["$abandonados", "$total"] }
+    }
+  }
+]).forEach(function(r) {
+  const idDoc = r.siteId + "_" + r.formId;
+  db.metricas_resumen.updateOne(
+    { _id: idDoc },
+    {
+      $set: {
+        siteId: r.siteId,
+        nivel: "formulario",
+        formId: r.formId,
+        tasaAbandono: r.tasaAbandono,
+        fechaGeneracion: new Date()
+      }
+    },
+    { upsert: true }
+  );
+});
+
+#########################################################################
+########### Campo de mayor abandono por formulario por sitio ############
+#########################################################################
+
+db.formularios.aggregate([
+  { $match: { completado: false } },
+  {
+    $group: {
+      _id: { siteId: "$siteId", formId: "$formId", campo: "$ultimoCampoCompletado" },
+      cantidad: { $sum: 1 }
+    }
+  },
+  { $sort: { cantidad: -1 } },
+  {
+    $group: {
+      _id: { siteId: "$_id.siteId", formId: "$_id.formId" },
+      campoAbandonoMasComun: { $first: "$_id.campo" }
+    }
+  }
+]).forEach(function(r) {
+  const idDoc = r._id.siteId + "_" + r._id.formId;
+  db.metricas_resumen.updateOne(
+    { _id: idDoc },
+    {
+      $set: {
+        siteId: r._id.siteId,
+        nivel: "formulario",
+        formId: r._id.formId,
+        campoAbandonoMasComun: r.campoAbandonoMasComun,
+        fechaGeneracion: new Date()
+      }
+    },
+    { upsert: true }
+  );
+});
+
+#########################################################################
+######## Tiempo de completado promedio por formulario por sitio #########
+#########################################################################
+
+db.formularios.aggregate([
+  { $match: { completado: true, fin: { $exists: true, $ne: null } } },
+  {
+    $project: {
+      siteId: 1,
+      formId: 1,
+      duracionSegundos: { $divide: [{ $subtract: ["$fin", "$inicio"] }, 1000] }
+    }
+  },
+  {
+    $group: {
+      _id: { siteId: "$siteId", formId: "$formId" },
+      tiempoPromedioCompletado: { $avg: "$duracionSegundos" }
+    }
+  }
+]).forEach(function(r) {
+  const idDoc = r._id.siteId + "_" + r._id.formId;
+  db.metricas_resumen.updateOne(
+    { _id: idDoc },
+    {
+      $set: {
+        siteId: r._id.siteId,
+        nivel: "formulario",
+        formId: r._id.formId,
+        tiempoPromedioCompletado: r.tiempoPromedioCompletado,
+        fechaGeneracion: new Date()
+      }
+    },
+    { upsert: true }
+  );
+});
+
+#########################################################################
+############# Usuarios nuevos y recurrentes por sitio ###################
+#########################################################################
+
+db.usuarios.aggregate([
+  {
+    $group: {
+      _id: "$siteId",
+      usuariosNuevos: { $sum: { $cond: [{ $eq: ["$totalSesiones", 1] }, 1, 0] } },
+      usuariosRecurrentes: { $sum: { $cond: [{ $gt: ["$totalSesiones", 1] }, 1, 0] } }
+    }
+  }
+]).forEach(function(r) {
+  db.metricas_resumen.updateOne(
+    { _id: r._id },
+    {
+      $set: {
+        siteId: r._id,
+        nivel: "sitio",
+        usuariosNuevos: r.usuariosNuevos,
+        usuariosRecurrentes: r.usuariosRecurrentes,
+        fechaGeneracion: new Date()
+      }
+    },
+    { upsert: true }
+  );
+});
+
+#########################################################################
+################# Tasa de rebote de sesiones por sitio ##################
+#########################################################################
+
+db.sesiones.aggregate([
+  {
+    $group: {
+      _id: "$siteId",
+      total: { $sum: 1 },
+      rebotes: { $sum: { $cond: [{ $eq: ["$esRebote", true] }, 1, 0] } }
+    }
+  },
+  {
+    $project: {
+      tasaRebote: { $divide: ["$rebotes", "$total"] }
+    }
+  }
+]).forEach(function(r) {
+  db.metricas_resumen.updateOne(
+    { _id: r._id },
+    {
+      $set: {
+        siteId: r._id,
+        nivel: "sitio",
+        tasaRebote: r.tasaRebote,
+        fechaGeneracion: new Date()
+      }
+    },
+    { upsert: true }
+  );
+});
+
+#########################################################################
+################ Paginas promedio por sesión por sitio ##################
+#########################################################################
+
+db.sesiones.aggregate([
+  {
+    $project: {
+      siteId: 1,
+      cantidadPaginas: { $size: "$rutas" }
+    }
+  },
+  {
+    $group: {
+      _id: "$siteId",
+      paginasPorSesionPromedio: { $avg: "$cantidadPaginas" }
+    }
+  }
+]).forEach(function(r) {
+  db.metricas_resumen.updateOne(
+    { _id: r._id },
+    {
+      $set: {
+        siteId: r._id,
+        nivel: "sitio",
+        paginasPorSesionPromedio: r.paginasPorSesionPromedio,
+        fechaGeneracion: new Date()
+      }
+    },
+    { upsert: true }
+  );
+});
+
+#########################################################################
+############### Duración promedio de sesión por sitio ###################
+#########################################################################
+
+db.sesiones.aggregate([
+  { $match: { duracionTotal: { $exists: true, $ne: null } } },
+  {
+    $group: {
+      _id: "$siteId",
+      duracionSesionPromedio: { $avg: "$duracionTotal" }
+    }
+  }
+]).forEach(function(r) {
+  db.metricas_resumen.updateOne(
+    { _id: r._id },
+    {
+      $set: {
+        siteId: r._id,
+        nivel: "sitio",
+        duracionSesionPromedio: r.duracionSesionPromedio,
+        fechaGeneracion: new Date()
+      }
+    },
+    { upsert: true }
+  );
+});
+
+#########################################################################
+ Tasa de conversión y tiempo de conversión promedio de sesiones por sitio
+#########################################################################
+
+const subtiposConversion = ["compra", "completar_formulario", "suscripcion", "cancelacion", "contacto"];
+
+db.sesiones.aggregate([
+  {
+    $project: {
+      siteId: 1,
+      inicio: 1,
+      eventoConversion: {
+        $filter: {
+          input: { $ifNull: ["$eventosClave", []] },
+          as: "e",
+          cond: { $in: ["$$e.subtipo", subtiposConversion] }
+        }
+      }
+    }
+  },
+  {
+    $project: {
+      siteId: 1,
+      convirtio: { $gt: [{ $size: "$eventoConversion" }, 0] },
+      tiempoConversion: {
+        $cond: [
+          { $gt: [{ $size: "$eventoConversion" }, 0] },
+          {
+            $divide: [
+              { $subtract: [{ $arrayElemAt: ["$eventoConversion.timestamp", 0] }, "$inicio"] },
+              1000
+            ]
+          },
+          null
+        ]
+      }
+    }
+  },
+  {
+    $group: {
+      _id: "$siteId",
+      totalSesiones: { $sum: 1 },
+      sesionesConvertidas: { $sum: { $cond: ["$convirtio", 1, 0] } },
+      tiempoConversionPromedio: { $avg: "$tiempoConversion" }
+    }
+  },
+  {
+    $project: {
+      tasaConversion: { $divide: ["$sesionesConvertidas", "$totalSesiones"] },
+      tiempoConversionPromedio: 1
+    }
+  }
+]).forEach(function(r) {
+  db.metricas_resumen.updateOne(
+    { _id: r._id },
+    {
+      $set: {
+        siteId: r._id,
+        nivel: "sitio",
+        tasaConversion: r.tasaConversion,
+        tiempoConversionPromedio: r.tiempoConversionPromedio,
+        fechaGeneracion: new Date()
+      }
+    },
+    { upsert: true }
+  );
+});
+
+#########################################################################
+############## Dispositivo habitual de sesiones por sitio ###############
+#########################################################################
+
+db.sesiones.aggregate([
+  { $match: { dispositivo: { $exists: true, $ne: null } } },
+  {
+    $group: {
+      _id: { siteId: "$siteId", dispositivo: "$dispositivo" },
+      cantidad: { $sum: 1 }
+    }
+  },
+  { $sort: { cantidad: -1 } },
+  {
+    $group: {
+      _id: "$_id.siteId",
+      dispositivoHabitual: { $first: "$_id.dispositivo" }
+    }
+  }
+]).forEach(function(r) {
+  db.metricas_resumen.updateOne(
+    { _id: r._id },
+    {
+      $set: {
+        siteId: r._id,
+        nivel: "sitio",
+        dispositivoHabitual: r.dispositivoHabitual,
+        fechaGeneracion: new Date()
+      }
+    },
+    { upsert: true }
+  );
+});
