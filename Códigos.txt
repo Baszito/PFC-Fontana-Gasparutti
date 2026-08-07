@@ -1,4 +1,20 @@
 ##############################################################
+################### Guardando históricos #####################
+##############################################################
+
+function archivarTodo() {
+  db.metricas_resumen.find().forEach(function(doc) {
+    db.metricas_historial.replaceOne(
+      { _id: doc._id },
+      doc,
+      { upsert: true }
+    );
+  });
+}
+
+archivarTodo();
+
+##############################################################
 ######## PageViews - Por página y sitio ######################
 ##############################################################
 db.eventos.aggregate([
