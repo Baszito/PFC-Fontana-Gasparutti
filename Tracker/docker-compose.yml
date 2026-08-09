@@ -1,0 +1,25 @@
+name: test
+services:
+  mongo:
+    image: mongo
+    ports:
+      - 27017:27017
+    volumes:
+      - db:/data/db
+  api:
+    build: ./api
+    ports:
+      - 4000:4000
+    depends_on: #para que arranque despues de mongo
+      - mongo
+
+  cron:
+    build: ./api
+    ports:
+      - 5000:5000
+    command: node cron.js
+    depends_on:
+      - mongo
+
+volumes:
+  db:
