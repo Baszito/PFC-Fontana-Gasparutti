@@ -17,7 +17,12 @@ const PUBLIC_DIR = path.join(__dirname); //y la direccion
 //=> es un alias para function()}{}
 http.createServer((req,res) => {
   //creo el path a index.html
-  let filePath = path.join(PUBLIC_DIR, req.url === "/" ? "index.html" : req.url);
+  const url = new URL(req.url, `http://${req.headers.host}`);
+
+  let filePath = path.join(
+      PUBLIC_DIR,
+      url.pathname === "/" ? "index.html" : url.pathname
+  );
   //con el filesystem de nodejs, leo el reafFile en filepath
   //readFile me pide la direccion
   //en encoding

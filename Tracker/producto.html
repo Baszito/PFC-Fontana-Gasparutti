@@ -1,0 +1,740 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Monitor 24" Full HD | TechStore</title>
+
+    <link rel="icon" href="favicon.ico">
+
+    <style>
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f5f7;
+            color: #222;
+        }
+
+        /* =========================
+           HEADER
+        ========================= */
+
+        header {
+            background-color: #1f2937;
+            color: white;
+            padding: 20px 60px;
+        }
+
+        .header-content {
+            max-width: 1200px;
+            margin: auto;
+
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        nav a {
+            color: white;
+            text-decoration: none;
+            margin-left: 25px;
+        }
+
+        nav a:hover {
+            text-decoration: underline;
+        }
+
+
+        /* =========================
+           BREADCRUMB
+        ========================= */
+
+        .breadcrumb {
+            max-width: 1200px;
+            margin: 25px auto 0;
+            padding: 0 20px;
+
+            color: #666;
+            font-size: 14px;
+        }
+
+        .breadcrumb a {
+            color: #2563eb;
+            text-decoration: none;
+        }
+
+
+        /* =========================
+           PRODUCT
+        ========================= */
+
+        main {
+            max-width: 1200px;
+            margin: 25px auto 60px;
+            padding: 0 20px;
+        }
+
+        .product-page {
+
+            background-color: white;
+
+            border-radius: 10px;
+
+            padding: 40px;
+
+            display: grid;
+
+            grid-template-columns: 1fr 1fr;
+
+            gap: 50px;
+
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+
+
+        /* =========================
+           PRODUCT IMAGE
+        ========================= */
+
+        .product-image {
+
+            height: 400px;
+
+            background-color: #e5e7eb;
+
+            border-radius: 10px;
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content: center;
+
+            font-size: 140px;
+        }
+
+
+        /* =========================
+           PRODUCT INFO
+        ========================= */
+
+        .product-info h1 {
+
+            font-size: 34px;
+
+            margin-bottom: 15px;
+        }
+
+        .rating {
+
+            color: #f59e0b;
+
+            margin-bottom: 20px;
+        }
+
+        .description {
+
+            color: #666;
+
+            line-height: 1.6;
+
+            margin-bottom: 25px;
+        }
+
+        .price {
+
+            font-size: 34px;
+
+            font-weight: bold;
+
+            margin-bottom: 10px;
+        }
+
+        .stock {
+
+            color: #16a34a;
+
+            margin-bottom: 25px;
+        }
+
+
+        /* =========================
+           BUTTONS
+        ========================= */
+
+        .button {
+
+            border: none;
+
+            padding: 14px 25px;
+
+            border-radius: 6px;
+
+            cursor: pointer;
+
+            font-size: 16px;
+        }
+
+        .button-primary {
+
+            background-color: #2563eb;
+
+            color: white;
+
+            width: 100%;
+        }
+
+        .button-primary:hover {
+
+            background-color: #1d4ed8;
+        }
+
+
+        /* =========================
+           QUANTITY
+        ========================= */
+
+        .purchase {
+
+            display: flex;
+
+            gap: 10px;
+
+            margin-bottom: 15px;
+        }
+
+        .quantity {
+
+            width: 80px;
+
+            padding: 12px;
+
+            border: 1px solid #ccc;
+
+            border-radius: 6px;
+
+            font-size: 16px;
+        }
+
+
+        /* =========================
+           DETAILS
+        ========================= */
+
+        .details {
+
+            margin-top: 30px;
+
+            border-top: 1px solid #ddd;
+
+            padding-top: 25px;
+        }
+
+        .details h2 {
+
+            margin-bottom: 15px;
+
+            font-size: 20px;
+        }
+
+        .details ul {
+
+            list-style: none;
+        }
+
+        .details li {
+
+            padding: 8px 0;
+
+            border-bottom: 1px solid #eee;
+
+            color: #555;
+        }
+
+
+        /* =========================
+           RELATED PRODUCTS
+        ========================= */
+
+        .related {
+
+            margin-top: 50px;
+        }
+
+        .related h2 {
+
+            margin-bottom: 20px;
+        }
+
+        .related-products {
+
+            display: grid;
+
+            grid-template-columns: repeat(3, 1fr);
+
+            gap: 20px;
+        }
+
+        .related-product {
+
+            background-color: white;
+
+            padding: 20px;
+
+            border-radius: 8px;
+
+            box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+        }
+
+        .related-image {
+
+            height: 120px;
+
+            background-color: #e5e7eb;
+
+            border-radius: 6px;
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content: center;
+
+            font-size: 50px;
+
+            margin-bottom: 15px;
+        }
+
+        .related-product h3 {
+
+            margin-bottom: 10px;
+        }
+
+        .related-product p {
+
+            color: #666;
+
+            margin-bottom: 15px;
+        }
+
+        .related-product a {
+
+            color: #2563eb;
+
+            text-decoration: none;
+
+            font-weight: bold;
+        }
+
+
+        /* =========================
+           FOOTER
+        ========================= */
+
+        footer {
+
+            background-color: #111827;
+
+            color: white;
+
+            padding: 40px;
+
+            text-align: center;
+        }
+
+        footer a {
+
+            color: #93c5fd;
+
+            margin: 0 10px;
+        }
+
+
+        /* =========================
+           RESPONSIVE
+        ========================= */
+
+        @media (max-width: 800px) {
+
+            .product-page {
+
+                grid-template-columns: 1fr;
+
+            }
+
+            .related-products {
+
+                grid-template-columns: 1fr;
+
+            }
+
+            header {
+
+                padding: 20px;
+
+            }
+
+            .header-content {
+
+                flex-direction: column;
+
+                gap: 15px;
+
+            }
+
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+
+    <!-- =========================
+         HEADER
+    ========================= -->
+
+    <header>
+
+        <div class="header-content">
+
+            <div class="logo">
+                TechStore
+            </div>
+
+            <nav>
+
+                <a href="index.html">
+                    Inicio
+                </a>
+
+                <a href="index.html#productos">
+                    Productos
+                </a>
+
+                <a href="index.html#contacto">
+                    Contacto
+                </a>
+
+            </nav>
+
+        </div>
+
+    </header>
+
+
+    <!-- =========================
+         BREADCRUMB
+    ========================= -->
+
+    <div class="breadcrumb">
+
+        <a href="index.html">
+            Inicio
+        </a>
+
+        &nbsp; / &nbsp;
+
+        <a href="index.html#productos">
+            Productos
+        </a>
+
+        &nbsp; / &nbsp;
+
+        Monitor 24" Full HD
+
+    </div>
+
+
+    <!-- =========================
+         PRODUCT
+    ========================= -->
+
+    <main>
+
+        <section class="product-page">
+
+
+            <!-- IMAGEN -->
+
+            <div class="product-image">
+
+                🖥️
+
+            </div>
+
+
+            <!-- INFORMACIÓN -->
+
+            <div class="product-info">
+
+                <h1>
+                    Monitor 24" Full HD
+                </h1>
+
+
+                <div class="rating">
+
+                    ★★★★★
+                    <span style="color:#666;">
+                        4.8 (126 opiniones)
+                    </span>
+
+                </div>
+
+
+                <p class="description">
+
+                    Disfrutá de una excelente calidad de imagen
+                    con este monitor IPS de 24 pulgadas.
+
+                    Ideal para trabajar, estudiar y jugar.
+
+                </p>
+
+
+                <div class="price">
+
+                    $189.999
+
+                </div>
+
+
+                <div class="stock">
+
+                    ✓ En stock
+
+                </div>
+
+
+                <!-- COMPRA -->
+
+                <div class="purchase">
+
+                    <input
+                        class="quantity"
+                        type="number"
+                        value="1"
+                        min="1"
+                        id="quantity"
+                    >
+
+                </div>
+
+
+                <button
+                    class="button button-primary"
+                    id="add-to-cart"
+                    data-product="monitor-24"
+                    data-goal="agregar_carrito">
+
+                    Agregar al carrito
+
+                </button>
+
+
+                <!-- DETALLES -->
+
+                <div class="details">
+
+                    <h2>
+                        Especificaciones
+                    </h2>
+
+                    <ul>
+
+                        <li>
+                            Tamaño: 24 pulgadas
+                        </li>
+
+                        <li>
+                            Resolución: 1920 × 1080
+                        </li>
+
+                        <li>
+                            Panel: IPS
+                        </li>
+
+                        <li>
+                            Frecuencia: 75 Hz
+                        </li>
+
+                        <li>
+                            Conexiones: HDMI / DisplayPort
+                        </li>
+
+                        <li>
+                            Tiempo de respuesta: 5 ms
+                        </li>
+
+                    </ul>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- =========================
+             PRODUCTOS RELACIONADOS
+        ========================= -->
+
+        <section class="related">
+
+            <h2>
+                También te puede interesar
+            </h2>
+
+
+            <div class="related-products">
+
+
+                <!-- TECLADO -->
+
+                <article class="related-product">
+
+                    <div class="related-image">
+                        ⌨️
+                    </div>
+
+                    <h3>
+                        Teclado Mecánico RGB
+                    </h3>
+
+                    <p>
+                        $79.999
+                    </p>
+
+                    <a
+                        href="producto.html?producto=teclado-rgb"
+                        data-product="teclado-rgb"
+                        data-goal="ver_producto">
+
+                        Ver producto →
+
+                    </a>
+
+                </article>
+
+
+                <!-- MOUSE -->
+
+                <article class="related-product">
+
+                    <div class="related-image">
+                        🖱️
+                    </div>
+
+                    <h3>
+                        Mouse Gamer
+                    </h3>
+
+                    <p>
+                        $45.999
+                    </p>
+
+                    <a
+                        href="producto.html?producto=mouse-gamer"
+                        data-product="mouse-gamer"
+                        data-goal="ver_producto">
+
+                        Ver producto →
+
+                    </a>
+
+                </article>
+
+
+                <!-- HEADSET -->
+
+                <article class="related-product">
+
+                    <div class="related-image">
+                        🎧
+                    </div>
+
+                    <h3>
+                        Headset Gamer
+                    </h3>
+
+                    <p>
+                        $62.999
+                    </p>
+
+                    <a
+                        href="producto.html?producto=headset"
+                        data-product="headset"
+                        data-goal="ver_producto">
+
+                        Ver producto →
+
+                    </a>
+
+                </article>
+
+            </div>
+
+        </section>
+
+    </main>
+
+
+    <!-- =========================
+         FOOTER
+    ========================= -->
+
+    <footer>
+
+        <p>
+            © 2026 TechStore
+        </p>
+
+        <br>
+
+        <a href="index.html">
+            Inicio
+        </a>
+
+        <a href="index.html#productos">
+            Productos
+        </a>
+
+        <a href="index.html#contacto">
+            Contacto
+        </a>
+
+    </footer>
+
+
+    <!-- =========================
+         TRACKER
+    ========================= -->
+
+    <script
+        src="tracker.js"
+        data-site-id="1">
+    </script>
+
+
+</body>
+
+</html>
+```

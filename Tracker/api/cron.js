@@ -204,6 +204,7 @@ function esperar(ms) {
 
 cron.schedule('*/1 * * * *',procesarBatches);
 cron.schedule('*/2 * * * *',traducirGeolocalizaciones);
+
 /*machete de la DB : 
 =========SITIOS=========
 - id secuencial

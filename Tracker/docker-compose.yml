@@ -14,7 +14,7 @@ services:
       - mongo
 
   cron:
-    build: ./api
+    build: ./api #se arranca al mismo tiempo que la api
     ports:
       - 5000:5000
     command: node cron.js
