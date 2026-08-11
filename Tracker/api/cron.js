@@ -26,9 +26,8 @@ async function procesarBatches() { //funcion principal
         let rutas = batch.eventos.filter(e => e.tipo_evento=="pageview") //las rutas de la sesion las sacamos de las pageview
         .map(e => ({pagina: e.data.url, timestamp:new Date(e.timestamp)}));
 
-        let eventosClave = batch.eventos.filter(e => e.tipo_evento=="evento_objetivo") //los eventosClave disparados los sacamos de los EventoClave
-        .map(e => ({tipo: "evento_objetivo", subtipo: e.sub_tipo, timestamp: new Date(e.timestamp) }));
-
+        let eventosClave = batch.eventos.filter(e => e.tipo_evento=="objetivo")
+        .map(e => ({tipo: "objetivo", subtipo: e.sub_tipo, timestamp: new Date(e.timestamp) }));
         console.log(`rutas encontradas: ${rutas.length} | eventos objetivo: ${eventosClave.length}`);//contador para control
 
         for (const evento of batch.eventos) { //por cada evento
@@ -51,9 +50,9 @@ async function procesarBatches() { //funcion principal
                     nuevo.metadata.esInteractivo = evento.data.esInteractivo;
                     nuevo.metadata.tipo = "click";
                     break;
-                case "evento_objetivo":
+                case "objetivo":
                     nuevo.metadata.subtipo = evento.sub_tipo;
-                    nuevo.metadata.tipo = "evento_objetivo";
+                    nuevo.metadata.tipo = "objetivo";
                     break;
                 case "hover":
                     nuevo.metadata.elemento = evento.data.element;

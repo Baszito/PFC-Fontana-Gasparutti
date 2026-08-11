@@ -6,7 +6,6 @@
    cookie de consentimiento
    ========================================================== */
 let consentimiento = localStorage.getItem("consentimiento")
-console.log(consentimiento)
 if (consentimiento == "true"){
     iniciarTracking();
 
@@ -165,6 +164,7 @@ for (const objetivo of objetivos){
     });
     objetivo.addEventListener("mouseleave", function() {
         let hover_total = Date.now() - hover_enter;
+        if (hover_total > 500){
         let hover = {
             tipo_evento: "hover",
             timestamp: Date.now(),
@@ -176,6 +176,7 @@ for (const objetivo of objetivos){
             }
         };
         eventos_batch.push(hover);
+    }
     });
 }
 
@@ -247,6 +248,7 @@ if (referred == ""){
    ========================================================== */
 
 let api_ingesta = "http://localhost:4000";
+
 page.addEventListener("visibilitychange", function(){
     if (page.visibilityState === "hidden") {
         let scroll = {
@@ -306,7 +308,6 @@ setInterval(
         };
         const result = await response.json();
         eventos_batch=[];
-        console.log("Envio !")
         }   
         catch(error){
         console.error(error.message);
