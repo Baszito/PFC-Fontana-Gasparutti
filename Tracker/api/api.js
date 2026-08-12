@@ -26,15 +26,57 @@ const client = new mongo.MongoClient(uri);
 
 async function main() {
     await client.connect();
-    console.log("API : Conectado a MongoDB");
     
-    app.post('/', async (req, res) => {
-      if(req.body.eventos != null){//no mando batches vacios
-        let batch = {...req.body,procesado:false} //agregamos un campito procesado:false para luego separar
-        let ack = await client.db("PruebaBBDD").collection("raw_batches").insertOne(batch);
-        res.send(ack);
-      }
-    }); 
+    console.log("API : Conectado a MongoDB");
+    const db = client.db("PruebaBBDD");
+    app.post("/", async (req, res) => {
+    try {
+            if (req.body.eventos == null) {
+                return res.status(400).json({ error: "Faltan eventos" });
+            }
+
+            // buscar el sitio por site_id
+            const sitio = await db.collection("sitios").findOne({
+                _id: new mongo.ObjectId(req.body.siteId)
+            });
+
+            if (sitio == null) {
+                console.log(`Sitio no encontrado: ${req.body.siteId}`);
+                return res.status(404).json({ error: "Sitio no encontrado" });
+            }
+
+            // obtener el origin del request
+            const origin = req.headers.origin;
+
+            if (origin == null) {
+                console.log("Request sin header Origin");
+                return res.status(400).json({ error: "Origin no presente" });
+            }
+
+            // extraer solo el hostname de ambas URLs (sin protocolo ni path)
+            const origenHost = new URL(origin).hostname;
+            const baseUrlHost = new URL(sitio.url).hostname;
+
+            // comparar
+            if (origenHost !== baseUrlHost) {
+                console.log(`Origin no coincide. Esperado: ${baseUrlHost}, recibido: ${origenHost}`);
+                return res.status(403).json({ error: "Origin no autorizado" });
+            }
+
+            // sigue el flujo normal
+            await db.collection("raw_batches").insertOne({
+                ...req.body,
+                procesado: false
+            });
+            
+
+            res.status(200).json({ ok: true });
+
+        } catch (error) {
+            console.log(`Error en validación de sitio: ${error.message}`);
+            res.status(500).json({ error: "Error interno" });
+        }
+    });
 
     app.listen(port, () => { //porteo manual de la app creada al puerto asignado
       console.log(`Escuchando a la app en el puerto ${port}`);

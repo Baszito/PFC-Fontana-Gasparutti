@@ -5,10 +5,10 @@
 /* ==========================================================
    cookie de consentimiento
    ========================================================== */
+const scriptTag = document.currentScript;
 let consentimiento = localStorage.getItem("consentimiento")
 if (consentimiento == "true"){
     iniciarTracking();
-
 }else if(consentimiento == null){
     generarBanner();
 }
@@ -67,7 +67,7 @@ if (id_persistente == null){
      id_persistente = crypto.randomUUID();
      localStorage.setItem("id_persistente",id_persistente);
 }
-const site_id = document.currentScript.dataset.siteId;
+const site_id = scriptTag.dataset.siteId;
 
 /* ==========================================================
    DATA STRUCTURE
@@ -134,24 +134,32 @@ page.addEventListener("click", function(event) {
 /* ==========================================================
    SCROLL DEPTH
    ========================================================== */
-let page_total = (document.body.scrollHeight > document.documentElement.scrollHeight) ? document.body.scrollHeight : document.documentElement.scrollHeight;
-let page_visible = window.innerHeight;
-let page_size = page_total - page_visible;
 let scroll_percent = 0;
 let max_scroll_depth = 0;
 let scroll_tracking = true;
+
+function calcularPageSize() {
+    let page_total = (document.body.scrollHeight > document.documentElement.scrollHeight)
+        ? document.body.scrollHeight
+        : document.documentElement.scrollHeight;
+    let page_visible = window.innerHeight;
+    return page_total - page_visible;
+}
+
 window.addEventListener("scroll", function() {
     if (scroll_tracking) {
         scroll_tracking = false;
         let actual_scroll = window.scrollY;
+        let page_size = calcularPageSize(); // recalculado en cada evento, no una sola vez
+
         if (max_scroll_depth < actual_scroll) {
             max_scroll_depth = actual_scroll;
-            scroll_percent = (max_scroll_depth / page_size) * 100;
+            let porcentaje_crudo = page_size > 0 ? (max_scroll_depth / page_size) * 100 : 0;
+            scroll_percent = Math.min(100, Math.max(0, porcentaje_crudo)); // clamp entre 0 y 100
         }
         setTimeout(() => { scroll_tracking = true }, 100);
     }
 });
-
 
 /* ==========================================================
    HOVER
@@ -255,7 +263,7 @@ page.addEventListener("visibilitychange", function(){
             tipo_evento:"scroll",
             timestamp:Date.now(),
             url: url,
-            data: {scrollDepth: max_scroll_depth}
+            data: {scrollDepth: scroll_percent}
         };
         eventos_batch.push(scroll)
         let sesion = {

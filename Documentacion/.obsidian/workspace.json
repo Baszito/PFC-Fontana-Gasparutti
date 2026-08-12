@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "Tracker.md",
+                "file": "Api.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "Tracker"
+              "title": "Api"
             }
           },
           {
@@ -231,15 +231,15 @@
       "obsidian-excalidraw-plugin:Nuevo Bosquejo": false
     }
   },
-  "active": "0fd93df1d50c226d",
+  "active": "5733bdbf5a5c3b31",
   "lastOpenFiles": [
     "Cron.md",
-    "Procesamiento",
-    "Sin título.md",
     "Tracker.md",
+    "Sin título.md",
+    "Pasted image 20260810224016.png",
+    "Procesamiento",
     "Api.md",
     "Estructura.md",
-    "Pasted image 20260810224016.png",
     "Bienvenido.md",
     "Tracker-DB"
   ]
