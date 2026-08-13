@@ -4,7 +4,7 @@ const http=require("http"); //imports de nodejs
 const fs = require("fs");
 const path = require("path");
 
-const PORT = 4000; //seteo el puerto a escuchar
+const PORT = 3000; //seteo el puerto a escuchar
 const PUBLIC_DIR = path.join(__dirname); //y la direccion
 
 //Creo un server
