@@ -5,6 +5,7 @@
 /* ==========================================================
    cookie de consentimiento
    ========================================================== */
+   
 const scriptTag = document.currentScript;
 let consentimiento = localStorage.getItem("consentimiento")
 if (consentimiento == "true"){
