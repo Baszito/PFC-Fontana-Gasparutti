@@ -47,7 +47,7 @@ db.eventos.aggregate([
 db.eventos.aggregate([
   { $match: { "metadata.tipo": "scroll" } },
   { $group: { _id: { siteId: "$metadata.siteId", pagina: "$metadata.pagina" }, 
-	scrollDepthPromedio: { $avg: "$valor" } } }
+	scrollDepthPromedio: { $avg: "$metadata.valor" } } }
 ]).forEach(function (r) {
   db.metricas_resumen.updateOne(
     { _id: r._id.siteId + "_" + r._id.pagina.replace(/\//g, "") },
@@ -79,7 +79,7 @@ db.eventos.aggregate([
 db.eventos.aggregate([
   { $match: { "metadata.tipo": "hover" } },
   { $group: { _id: { siteId: "$metadata.siteId", pagina: "$metadata.pagina", elemento: "$metadata.elemento" }, 
-	hoverPromedio: { $avg: "$valor" } } }
+	hoverPromedio: { $avg: "$metadata.duracion" } } }
 ]).forEach(function (r) {
 
   db.metricas_resumen.updateOne(
