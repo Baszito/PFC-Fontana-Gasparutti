@@ -263,8 +263,10 @@ page.addEventListener("visibilitychange", function(){
         let scroll = {
             tipo_evento:"scroll",
             timestamp:Date.now(),
-            url: url,
-            data: {scrollDepth: scroll_percent}
+            data: {
+                url: url,
+                scrollDepth: scroll_percent
+            }
         };
         eventos_batch.push(scroll)
         let sesion = {

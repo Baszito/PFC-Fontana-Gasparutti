@@ -21,6 +21,12 @@ services:
     depends_on:
       - mongo
 
+  cleaner:
+    build: ./api
+    command: node dataCleaner.js
+    depends_on:
+      - mongo
+
   pagina:
     build: .
     ports: 

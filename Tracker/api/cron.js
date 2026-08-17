@@ -81,10 +81,10 @@ async function procesarBatches() { //funcion principal
                             ultimoCampoCompleto: evento.data.campo
                         },
                         $setOnInsert: {
-                            siteID: batch.siteID,
+                            siteId: batch.siteId,
                             sessionId: batch.sessionId,
                             id_formulario: evento.data.formulario,
-                            id_usuario: batch.userId,
+                            userId: batch.userId,
                             Inicio: new Date(evento.timestamp),
                             completado: false
                         }
@@ -98,7 +98,7 @@ async function procesarBatches() { //funcion principal
 
                 case "form_submit": {
                     let filtroForm = {
-                        siteID: batch.siteID,
+                        siteId: batch.siteId,
                         sessionId: batch.sessionId,
                         id_formulario: evento.data.formulario
                     };
@@ -125,6 +125,7 @@ async function procesarBatches() { //funcion principal
                 eventosClave: { $each: eventosClave }
             },
             $setOnInsert: {
+                siteId: batch.siteId,
                 userId: batch.userId,
                 inicio: new Date(batch.inicio_sesion),
                 is_mobile: batch.is_mobile,
