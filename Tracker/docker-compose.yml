@@ -13,13 +13,21 @@ services:
     depends_on: #para que arranque despues de mongo
       - mongo
 
-  cron:
+  reparto:
     build: ./api #se arranca al mismo tiempo que la api
     ports:
       - 5000:5000
-    command: node cron.js
+    command: node reparto.js
     depends_on:
       - mongo
 
+  preprocesamiento:
+    build: ./api #se arranca al mismo tiempo que la api
+    ports:
+      - 6000:6000
+    command: node preprocesamiento.js
+    depends_on:
+      - mongo
+      
 volumes:
   db:

@@ -66,7 +66,7 @@ async function procesarBatches() { //funcion principal
                     break;
                 case "form_field": { //caso de que sea un form. Por cuestiones de practicidad, es una tabla aparte, asi que calculamos uno aparte
                     let filtroForm = {
-                        siteID: batch.siteID,
+                        siteId: batch.siteId,
                         sessionId: batch.sessionId,
                         id_formulario: evento.data.formulario
                     };
@@ -81,7 +81,7 @@ async function procesarBatches() { //funcion principal
                             ultimoCampoCompleto: evento.data.campo
                         },
                         $setOnInsert: {
-                            siteID: batch.siteID,
+                            siteId: batch.siteId,
                             sessionId: batch.sessionId,
                             id_formulario: evento.data.formulario,
                             id_usuario: batch.userId,
@@ -98,7 +98,7 @@ async function procesarBatches() { //funcion principal
 
                 case "form_submit": {
                     let filtroForm = {
-                        siteID: batch.siteID,
+                        siteId: batch.siteId,
                         sessionId: batch.sessionId,
                         id_formulario: evento.data.formulario
                     };
@@ -126,6 +126,7 @@ async function procesarBatches() { //funcion principal
             },
             $setOnInsert: {
                 userId: batch.userId,
+                siteID: batch.siteID,
                 inicio: new Date(batch.inicio_sesion),
                 is_mobile: batch.is_mobile,
                 geo: batch.demografica,//me falta servicio de traduccion
@@ -156,53 +157,8 @@ async function procesarBatches() { //funcion principal
     console.log("CRON : ciclo de procesamiento terminado\n");
 }}
 
-/* ==========================================================
-   logica de traduccion de demografica, se hace aparte, porque el nominatin tiene limitacion de 1 request por segundo
-   ========================================================== */
-
-async function traducirGeo(lat,lon){
-        const response = await fetch(
-            `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json`,
-            {
-                headers: {
-                    "User-Agent": "Keetup-TrackingSystem/1.0 (jfontana@keetup.com)"
-                }
-            }
-        );
-        const data = await response.json();
-        let pais = data.address?.country || null;
-        let provincia = data.address?.state || null;
-        let ciudad = data.address?.city || null;
-        return {pais,provincia,ciudad}
-}
-
-async function traducirGeolocalizaciones() {
-    let pendientes = await client.db("PruebaBBDD").collection("sesiones").find({
-         geo: { $type: "array" } 
-    }).toArray();
-    console.log(`CRON : Iniciando traducciones !`)
-    for (const sesion of pendientes) {
-        try {
-            let geoTraducido = await traducirGeo(sesion.geo[0], sesion.geo[1]);
-            await client.db("PruebaBBDD").collection("sesiones").updateOne(
-                {_id: sesion._id},
-                {$set: {geo: geoTraducido}}
-            );
-            console.log(`CRON : Se tradujeron ${pendientes.length} direcciones !`)
-        } catch (error) {
-            console.error(`Error traduciendo geo de sesión ${sesion._id}:`, error.message);
-        }
-        await esperar(1000);//por el limite de nominatin
-    }
-    
-}
-
-function esperar(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
-}
-
 cron.schedule('*/1 * * * *',procesarBatches);
-cron.schedule('*/2 * * * *',traducirGeolocalizaciones);
+
 
 /*machete de la DB : 
 =========SITIOS=========
