@@ -231,7 +231,67 @@ async function limpiarEventos(db, sesionesValidas) {
 // A partir de acá, los documentos con los que se trabaje deben tener el campo "revisado"
 // Y, por supuesto, que no tengan incluidos los campos que se agregan en las funciones 
 
+// Revisar: si esto se ejecuta con una sesión no cerrada, puede agregarle un FIN incorrecto.
+//puede generar una fecha de fin que no queremos. Deberíamos revisar que desde el último evento hayan pasado ciertos minutos.
 
+async function finSesion(){
+
+    let sesiones_pendientes = await client.db("PruebaBBDD").collection("sesiones").find(
+        { Fin: { $exists: false }, revisado: { $exists: true } }
+    ).toArray(); //obtengo las sesiones sin fin
+    //de las sesiones me voy a guardar el inicio, para mas adelante calcular la duracion
+    let sesionesMap = new Map(sesiones_pendientes.map(s => [s.sessionId, s]));
+    let sessionIds = sesiones_pendientes.map(s => s.sessionId);
+    // con aggregate obtengo una listita que tiene id de la session + el ultimoTimeStamp
+    let ultimos_eventos = await client.db("PruebaBBDD").collection("eventos").aggregate(
+        [{//primero, busco los eventos con el mismo sessionId
+            $match:{
+                "metadata.sessionId": {$in: sessionIds}
+                }
+            },
+        {//y despues, con group voy obteniendo el ultimo
+            $group:{
+                _id:"$metadata.sessionId", //esto dio problemas, es el _id de agrupamiento, no el de mongo
+                ultimoTimeStamp:{$max:"$timestamp"} //el valor dentro del campo del documento, por eso el $
+            }
+            }]
+
+    ).toArray();
+
+    //y ahora, reocorro ese grupo con un for y actualizo fin + duracion
+    //aca voy a usar una arquitectura que lei en reddit, se usa mucho en mongo, agrupar operaciones
+    let operaciones = [];
+    for (const grupo of ultimos_eventos){
+       try{ let sessionId = grupo._id;
+        let fin = grupo.ultimoTimeStamp;
+        let sesion = sesionesMap.get(sessionId);
+        let duracion = fin-sesion.Inicio;
+        
+	      //Acá ya podríamos aprovechar con los compos paginaInicio y Fin y esRebote
+        
+        let paginaInicio = sesion.rutas.length > 0 ? sesion.rutas[0].pagina : null;
+        let paginaFin = sesion.rutas.length > 0 ? sesion.rutas[ sesion.rutas.length - 1 ].pagina : null;
+        let esRebote = sesion.eventosClave.length === 0;
+
+
+        operaciones.push({
+            updateOne:{
+                filter:{ sessionId:sessionId},
+                update:{$set:{Fin: fin, duracionTotal:duracion, paginaInicio: paginaInicio, paginaFin: paginaFin, esRebote: esRebote}}
+            }
+        })
+        }
+        catch(error){
+            console.log(`Error preparando update de sesión: ${error.message}`)
+        }
+    } //y aca las ejecuto, es decir, solo me conecto una vez a la db
+    if (operaciones.length > 0) {
+    let resultadoBulk = await client.db("PruebaBBDD").collection("sesiones").bulkWrite(operaciones);
+    console.log(`PrePro : Sesiones actualizadas: ${resultadoBulk.modifiedCount}`);
+}
+}
+
+//Tengo que aplicar una función similar para los formularios
 
 //=====================================================================================================
 //============================== TRADUCCIÓN DE LOCALIZACIÓN ===========================================
@@ -239,7 +299,42 @@ async function limpiarEventos(db, sesionesValidas) {
 // Como en CIERRE DE SESIONES, solo se modificarán las sesiones que tengan el campo "revisado"
 // Y, nuevamente, que ya no se hayan realizado las traducciones
 
+async function traducirGeo(lat,lon){
+        const response = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json`,
+            {
+                headers: {
+                    "User-Agent": "Keetup-TrackingSystem/1.0 (jfontana@keetup.com)"
+                }
+            }
+        );
+        const data = await response.json();
+        let pais = data.address?.country || null;
+        let provincia = data.address?.state || null;
+        let ciudad = data.address?.city || null;
+        return {pais,provincia,ciudad}
+}
 
+async function traducirGeolocalizaciones() {
+    let pendientes = await client.db("PruebaBBDD").collection("sesiones").find({
+         geo: { $type: "array" }, revisado: { $exists: true }
+    }).toArray();
+    console.log(`PREPRO  : Iniciando traducciones !`)
+    for (const sesion of pendientes) {
+        try {
+            let geoTraducido = await traducirGeo(sesion.geo[0], sesion.geo[1]);
+            await client.db("PruebaBBDD").collection("sesiones").updateOne(
+                {_id: sesion._id},
+                {$set: {geo: geoTraducido}}
+            );
+            console.log(`PREPRO : Se tradujeron ${pendientes.length} direcciones !`)
+        } catch (error) {
+            console.error(`Error traduciendo geo de sesión ${sesion._id}:`, error.message);
+        }
+        await esperar(1000);//por el limite de nominatin
+    }
+    
+}
 
 //=====================================================================================================
 //=========================== CREACIÓN DE DOCUMENTOS DE USUARIOS ======================================
@@ -248,11 +343,68 @@ async function limpiarEventos(db, sesionesValidas) {
 //      -> Ya hayan sido revisados.
 //      -> Completos (que tengan una fecha de FIN)
 
+async function actualizarUsuarios(db) {
+  const coleccionSesiones = db.collection("sesiones");
+  const coleccionUsuarios = db.collection("usuarios");
+
+  const resultados = await coleccionSesiones.aggregate([
+    { $match: { revisado: { $exists: true }, Fin: { $exists: true } } },
+    { $sort: { inicio: 1 } },
+    {
+      $group: {
+        _id: { siteId: "$siteId", userId: "$userId" },
+        primeraSesion: { $first: "$$ROOT" },
+        ultimaSesion: { $last: "$$ROOT" },
+        totalSesiones: { $sum: 1 },
+        sesionesMobile: { $sum: { $cond: ["$is_mobile", 1, 0] } },
+        sesionesDesktop: { $sum: { $cond: ["$is_mobile", 0, 1] } }
+      }
+    }
+  ]).toArray();
+
+  for (const r of resultados) {
+    const idDoc = r._id.siteId + "_" + r._id.userId;
+    const isMobileHabitual = r.sesionesMobile > r.sesionesDesktop; // empate -> false
+
+    await coleccionUsuarios.updateOne(
+      { _id: idDoc },
+      {
+        $setOnInsert: {
+          siteId: r._id.siteId,
+          userId: r._id.userId,
+          fechaInicio: r.primeraSesion.inicio,
+          referrerOriginal: r.primeraSesion.referrer
+        },
+        $set: {
+          fechaFin: r.ultimaSesion.inicio,
+          totalSesiones: r.totalSesiones,
+          isMobile: isMobileHabitual
+        }
+      },
+      { upsert: true }
+    );
+  }
+
+  console.log(`CRON AGREGACION: ${resultados.length} usuario(s) actualizado(s)/creado(s)`);
+}
+
 //=====================================================================================================
 //============================== BORRADO DE RAW_BATCHES VIEJOS ========================================
 //=====================================================================================================
 
+let dias= 3;
+let old_time = (Date.now() - dias * 24 * 60 * 60 * 1000) //lo pasamos a ms
+async function limpiarRawBatches(){
+    let raw_borrados = await client.db("PruebaBBDD").collection("raw_batches").deleteMany({
+        "procesado": true,
+        "tiempo_envio":{$lt:old_time}     
+    });
+    console.log(`Limpieza: ${raw_borrados.deletedCount} raw_batches eliminados (procesados, +${dias} días)`);
+}
 
+function esperar(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
 
 // ---------- Función principal ----------
 async function limpiarDatos() {
