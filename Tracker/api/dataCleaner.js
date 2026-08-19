@@ -38,6 +38,8 @@ function esArray(v) {
 // ---------- SESIONES ----------
 // ------------------------------
 
+const LIMITE_MINUTOS_SESION_QUIETA = 15;
+
 async function limpiarSesiones(db) {
   //Trabajamos primero sobre la colección de sesiones
   const coleccion = db.collection("sesiones");
@@ -92,13 +94,27 @@ async function limpiarSesiones(db) {
           }
         }
       }
-    }
 
-    if (!valido) {
-      idsInvalidos.push(doc._id);
-      console.log(`CRON LIMPIEZA sesiones: descartando ${doc._id} -> ${motivos.join(", ")}`);
-    } else {
-      await coleccion.updateOne({ _id: doc._id}, { $set: { revisado: ahora}});
+      //Logica para sesión cerrada o no
+      let cerrada = false;
+      if (valido) {
+        let ultimoEvento = db.collection("eventos").find({ "metadata.siteId": doc.siteId, "metadata.sessionId": doc._id }).sort({ timestamp: -1 }).limit(1);
+        let fechaUltimoEvento = ultimoEvento.timestamp;
+
+        let dif = Math.floor((ahora - fechaUltimoEvento) / (1000 * 60)); 
+        if (dif >= LIMITE_MINUTOS_SESION_QUIETA) {
+          cerrada = true;
+        }
+      }
+
+      if (!valido) {
+        idsInvalidos.push(doc._id);
+        console.log(`CRON LIMPIEZA sesiones: descartando ${doc._id} -> ${motivos.join(", ")}`);
+      } else {
+        if (cerrada) {
+          await coleccion.updateOne({ _id: doc._id}, { $set: { revisado: ahora}});
+        }
+      }
     }
 
   if (idsInvalidos.length > 0) {
@@ -113,6 +129,8 @@ async function limpiarSesiones(db) {
 // ------------------------------
 // -------- FORMULARIOS ---------
 // ------------------------------
+const LIMITE_FORMULARIO_QUIETO = 10
+
 async function limpiarFormularios(db) {
   const coleccion = db.collection("formularios");
   const ahora = new Date();
@@ -141,11 +159,36 @@ async function limpiarFormularios(db) {
       }
     }
 
+    //Logica para formularios abandonados
+    let cerrado = false;
+    if (valido) {
+      if (!esFechaValida(doc.Fin)) {
+        const campos = doc.camposInteractuados || [];
+        const ultimoTimestamp = campos.length > 0 ? campos[campos.length - 1].timestamp : null;
+
+        if (ultimoTimestamp !== null) {
+          let dif = (ahora - ultimoTimestamp) / (1000 * 60);
+          if (dif >= LIMITE_FORMULARIO_QUIETO) {
+            cerrado = true;
+          }
+        } else {
+          let dif = (ahora - doc.Inicio) / (1000 * 60);
+          if (dif >= LIMITE_FORMULARIO_QUIETO) {
+            cerrado = true;
+          }
+        } 
+      } else {
+        cerrado = true;
+      }
+    }
+
     if (!valido) {
       idsInvalidos.push(doc._id);
       console.log(`CRON LIMPIEZA formularios: descartando ${doc._id} -> ${motivos.join(", ")}`);
     } else {
-      await coleccion.updateOne({ _id: doc._id}, { $set: { revisado: ahora}});
+      if (cerrado) {
+        await coleccion.updateOne({ _id: doc._id}, { $set: { revisado: ahora}});
+      }
     }
   }
 
@@ -231,8 +274,6 @@ async function limpiarEventos(db, sesionesValidas) {
 // A partir de acá, los documentos con los que se trabaje deben tener el campo "revisado"
 // Y, por supuesto, que no tengan incluidos los campos que se agregan en las funciones 
 
-// Revisar: si esto se ejecuta con una sesión no cerrada, puede agregarle un FIN incorrecto.
-//puede generar una fecha de fin que no queremos. Deberíamos revisar que desde el último evento hayan pasado ciertos minutos.
 
 async function finSesion(){
 
@@ -290,8 +331,6 @@ async function finSesion(){
     console.log(`PrePro : Sesiones actualizadas: ${resultadoBulk.modifiedCount}`);
 }
 }
-
-//Tengo que aplicar una función similar para los formularios
 
 //=====================================================================================================
 //============================== TRADUCCIÓN DE LOCALIZACIÓN ===========================================
