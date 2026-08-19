@@ -1,55 +1,32 @@
-//=========================================================
-//================== CRON de limpieza =====================
-//=========================================================
 const cron = require('node-cron');
 const mongo = require('mongodb');
 
 const uri = "mongodb://mongo:27017";
 const client = new mongo.MongoClient(uri);
 
-//Umbral para considerar una sesión/formulario "abandonado"
-//La idea es:
-//  Si pasadas unas 3 horas desde el inicio de un formulario o sesión, todavía no hay señales de finalización (campo fin incompleto)
-//  entonces podemos inferir que la sesión no se cerró de forma correcta, o los datos no se cargaron correctamente
-//  al no tener esos últimos datos, los documentos pueden considerarse invalidos, por ende los eliminamos
-const HORAS_LIMITE = 3;
+//=====================================================================================================
+//===================================== LIMPIEZA ======================================================
+//=====================================================================================================
 
 // ============ Funciones para la validación de tipos ================
 // (es STRING) Y (no es CADENA VACIA)
 function esString(v) {
   return typeof v === "string" && v.trim().length > 0;
 }
-// (está INDEFINIDO) O (es NULO) O (es STRING no cadena VACIA)
-function esStringOpcional(v) {
-  return v === undefined || v === null || esString(v);
-}
 
 // (es BOOLEANO)
 function esBooleano(v) {
   return typeof v === "boolean";
-}
-// (es INDEFINIDO) O (es NULO) O (es BOOLEANO)
-function esBooleanoOpcional(v) {
-  return v === undefined || v === null || esBooleano(v);
 }
 
 // (es DATE) Y (es una FECHA VALIDA)
 function esFechaValida(v) {
   return v instanceof Date && !isNaN(v.getTime());
 }
-// (es INDEFINIDO) O (es NULO) O (es DATE VALIDA)
-function esFechaOpcional(v) {
-  return v === undefined || v === null || esFechaValida(v);
-}
 
 // (es un NÚMERO) Y (no es NULO)
 function esNumero(v) {
   return typeof v === "number" && !isNaN(v);
-}
-
-// (es INDEFINIDO) O (es NULO) O (es un NÚMERO no NULO)
-function esNumeroOpcional(v) {
-  return v === undefined || v === null || esNumero(v);
 }
 
 // (es un ARREGLO)
@@ -84,20 +61,7 @@ async function limpiarSesiones(db) {
     if (!esString(doc.referrer)) { valido = false; motivos.push("referrer"); }
     if (!esArray(doc.rutas)) { valido = false; motivos.push("rutas"); }
     if (!esArray(doc.eventosClave)) { valido = false; motivos.push("eventosClave"); }
-
-    // --- Opcionales: tipo, si están presentes ---
-    if (!esFechaOpcional(doc.fin)) { valido = false; motivos.push("fin (tipo)"); }
-    if (!esNumeroOpcional(doc.duracionTotal)) { valido = false; motivos.push("duracionTotal (tipo)"); }
-    if (!esStringOpcional(doc.paginaIngreso)) { valido = false; motivos.push("paginaIngreso (tipo)"); }
-    if (!esStringOpcional(doc.paginaAbandono)) { valido = false; motivos.push("paginaAbandono (tipo)"); }
-    if (!esBooleanoOpcional(doc.esRebote)) { valido = false; motivos.push("esRebote (tipo)"); }
-
-    if (doc.geo !== undefined && doc.geo !== null) {
-      const g = doc.geo;
-      if (typeof g !== "object" || !esStringOpcional(g.pais) || !esStringOpcional(g.provincia) || !esStringOpcional(g.ciudad)) {
-        valido = false; motivos.push("geo (tipo)");
-      }
-    }
+    if (!doc.geo) { valido = false; motivos.push("geo");}
 
     // --- Validar estructura interna de rutas y eventosClave ---
     if (esArray(doc.rutas)) {
@@ -108,21 +72,6 @@ async function limpiarSesiones(db) {
       const eventosValidos = doc.eventosClave.every(e => esString(e.tipo) && esStringOpcional(e.subtipo) && esFechaValida(e.timestamp));
       if (!eventosValidos) { valido = false; motivos.push("eventosClave (estructura)"); }
     }
-
-    // --- Reglas de negocio extra (solo si lo anterior ya es válido) ---
-    if (valido) {
-      // Sesión sin "fin" hace más de HORAS_LIMITE horas -> se considera corrupta/abandonada
-      if (!esFechaValida(doc.fin)) {
-        const horasTranscurridas = (ahora - doc.inicio) / (1000 * 60 * 60);
-        if (horasTranscurridas > HORAS_LIMITE) {
-          valido = false; motivos.push(`sin fin luego de ${HORAS_LIMITE}hs`);
-        }
-      }
-
-      // inicio debe ser antes que fin
-      if (valido && esFechaValida(doc.fin) && doc.inicio >= doc.fin) {
-        valido = false; motivos.push("inicio >= fin");
-      }
 
       // Secuencia de timestamps en rutas debe ser ascendente
       if (valido && esArray(doc.rutas) && doc.rutas.length > 1) {
@@ -151,7 +100,6 @@ async function limpiarSesiones(db) {
     } else {
       await coleccion.updateOne({ _id: doc._id}, { $set: { revisado: ahora}});
     }
-  }
 
   if (idsInvalidos.length > 0) {
     await coleccion.deleteMany({ _id: { $in: idsInvalidos } });
@@ -162,7 +110,6 @@ async function limpiarSesiones(db) {
   const sesionesValidas = await coleccion.find({}, { projection: { siteId: 1, sessionId: 1 } }).toArray();
   return new Set(sesionesValidas.map(s => `${s.siteId}_${s.sessionId}`));
 }
-
 // ------------------------------
 // -------- FORMULARIOS ---------
 // ------------------------------
@@ -185,29 +132,12 @@ async function limpiarFormularios(db) {
     if (!esString(doc.id_formulario)) { valido = false; motivos.push("id_formulario"); }
     if (!esBooleano(doc.completado)) { valido = false; motivos.push("completado"); }
 
-    // --- Opcionales: tipo ---
-    if (!esFechaOpcional(doc.Fin)) { valido = false; motivos.push("fin (tipo)"); }
-    if (!esStringOpcional(doc.ultimoCampoCompleto)) { valido = false; motivos.push("ultimoCampoCompletado (tipo)"); }
-
     if (doc.camposInteractuados !== undefined && doc.camposInteractuados !== null) {
       if (!esArray(doc.camposInteractuados)) {
         valido = false; motivos.push("camposInteractuados (tipo)");
       } else {
         const camposValidos = doc.camposInteractuados.every(c => c.campo !== null && esFechaValida(c.timestamp));
         if (!camposValidos) { valido = false; motivos.push("camposInteractuados (estructura)"); }
-      }
-    }
-
-    // --- Reglas de negocio extra ---
-    if (valido) {
-      if (!esFechaValida(doc.Fin)) {
-        const horasTranscurridas = (ahora - doc.Inicio) / (1000 * 60 * 60);
-        if (horasTranscurridas > HORAS_LIMITE) {
-          valido = false; motivos.push(`sin fin luego de ${HORAS_LIMITE}hs`);
-        }
-      }
-      if (valido && esFechaValida(doc.Fin) && doc.Inicio >= doc.Fin) {
-        valido = false; motivos.push("inicio >= fin");
       }
     }
 
@@ -294,6 +224,35 @@ async function limpiarEventos(db, sesionesValidas) {
 
   console.log(`CRON LIMPIEZA eventos: ${idsInvalidos.length} documento(s) eliminado(s) de ${docs.length}`);
 }
+
+//=====================================================================================================
+//================================= CIERRE DE SESIONES ================================================
+//=====================================================================================================
+// A partir de acá, los documentos con los que se trabaje deben tener el campo "revisado"
+// Y, por supuesto, que no tengan incluidos los campos que se agregan en las funciones 
+
+
+
+//=====================================================================================================
+//============================== TRADUCCIÓN DE LOCALIZACIÓN ===========================================
+//=====================================================================================================
+// Como en CIERRE DE SESIONES, solo se modificarán las sesiones que tengan el campo "revisado"
+// Y, nuevamente, que ya no se hayan realizado las traducciones
+
+
+
+//=====================================================================================================
+//=========================== CREACIÓN DE DOCUMENTOS DE USUARIOS ======================================
+//=====================================================================================================
+// Solo se van a tener en cuenta los documentos de sesiones que:
+//      -> Ya hayan sido revisados.
+//      -> Completos (que tengan una fecha de FIN)
+
+//=====================================================================================================
+//============================== BORRADO DE RAW_BATCHES VIEJOS ========================================
+//=====================================================================================================
+
+
 
 // ---------- Función principal ----------
 async function limpiarDatos() {
