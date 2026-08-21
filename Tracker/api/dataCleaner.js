@@ -38,7 +38,7 @@ function esArray(v) {
 // ---------- SESIONES ----------
 // ------------------------------
 
-const LIMITE_MINUTOS_SESION_QUIETA = 15;
+const LIMITE_MINUTOS_SESION_QUIETA = 2;
 
 async function limpiarSesiones(db) {
   //Trabajamos primero sobre la colección de sesiones
@@ -71,7 +71,7 @@ async function limpiarSesiones(db) {
       if (!rutasValidas) { valido = false; motivos.push("rutas (estructura)"); }
     }
     if (esArray(doc.eventosClave)) {
-      const eventosValidos = doc.eventosClave.every(e => esString(e.tipo) && esStringOpcional(e.subtipo) && esFechaValida(e.timestamp));
+      const eventosValidos = doc.eventosClave.every(e => esString(e.tipo) && esFechaValida(e.timestamp));
       if (!eventosValidos) { valido = false; motivos.push("eventosClave (estructura)"); }
     }
 
@@ -98,10 +98,10 @@ async function limpiarSesiones(db) {
       //Logica para sesión cerrada o no
       let cerrada = false;
       if (valido) {
-        let ultimoEvento = db.collection("eventos").find({ "metadata.siteId": doc.siteId, "metadata.sessionId": doc._id }).sort({ timestamp: -1 }).limit(1);
+        let ultimoEvento = await db.collection("eventos").findOne({ "metadata.siteId": doc.siteId, "metadata.sessionId": doc.sessionId }, { sort: { timestamp: -1 }});
         let fechaUltimoEvento = ultimoEvento.timestamp;
 
-        let dif = Math.floor((ahora - fechaUltimoEvento) / (1000 * 60)); 
+        let dif = (ahora - fechaUltimoEvento) / (1000 * 60); 
         if (dif >= LIMITE_MINUTOS_SESION_QUIETA) {
           cerrada = true;
         }
@@ -129,7 +129,7 @@ async function limpiarSesiones(db) {
 // ------------------------------
 // -------- FORMULARIOS ---------
 // ------------------------------
-const LIMITE_FORMULARIO_QUIETO = 10
+const LIMITE_FORMULARIO_QUIETO = 10;
 
 async function limpiarFormularios(db) {
   const coleccion = db.collection("formularios");
@@ -275,61 +275,36 @@ async function limpiarEventos(db, sesionesValidas) {
 // Y, por supuesto, que no tengan incluidos los campos que se agregan en las funciones 
 
 
-async function finSesion(){
+async function finSesion(db){
 
-    let sesiones_pendientes = await client.db("PruebaBBDD").collection("sesiones").find(
+    let sesiones_pendientes = await db.collection("sesiones").find(
         { Fin: { $exists: false }, revisado: { $exists: true } }
-    ).toArray(); //obtengo las sesiones sin fin
-    //de las sesiones me voy a guardar el inicio, para mas adelante calcular la duracion
-    let sesionesMap = new Map(sesiones_pendientes.map(s => [s.sessionId, s]));
-    let sessionIds = sesiones_pendientes.map(s => s.sessionId);
-    // con aggregate obtengo una listita que tiene id de la session + el ultimoTimeStamp
-    let ultimos_eventos = await client.db("PruebaBBDD").collection("eventos").aggregate(
-        [{//primero, busco los eventos con el mismo sessionId
-            $match:{
-                "metadata.sessionId": {$in: sessionIds}
-                }
-            },
-        {//y despues, con group voy obteniendo el ultimo
-            $group:{
-                _id:"$metadata.sessionId", //esto dio problemas, es el _id de agrupamiento, no el de mongo
-                ultimoTimeStamp:{$max:"$timestamp"} //el valor dentro del campo del documento, por eso el $
-            }
-            }]
-
     ).toArray();
 
-    //y ahora, reocorro ese grupo con un for y actualizo fin + duracion
-    //aca voy a usar una arquitectura que lei en reddit, se usa mucho en mongo, agrupar operaciones
-    let operaciones = [];
-    for (const grupo of ultimos_eventos){
-       try{ let sessionId = grupo._id;
-        let fin = grupo.ultimoTimeStamp;
-        let sesion = sesionesMap.get(sessionId);
-        let duracion = fin-sesion.Inicio;
-        
-	      //Acá ya podríamos aprovechar con los compos paginaInicio y Fin y esRebote
-        
-        let paginaInicio = sesion.rutas.length > 0 ? sesion.rutas[0].pagina : null;
-        let paginaFin = sesion.rutas.length > 0 ? sesion.rutas[ sesion.rutas.length - 1 ].pagina : null;
-        let esRebote = sesion.eventosClave.length === 0;
+    for (const doc of sesiones_pendientes) {
 
+      //Buscar el último evento hecho por esta sesion
+      let ultimoEvento = await db.collection("eventos").findOne({ "metadata.siteId": doc.siteId, "metadata.sessionId": doc.sessionId }, { sort: { timestamp: -1 }});
+      
+      //guardar timestamp + minutos de espera de cierre
+      let fechaUltimoEvento = ultimoEvento.timestamp;
+      fechaUltimoEvento.setMinutes(fechaUltimoEvento.getMinutes() + LIMITE_MINUTOS_SESION_QUIETA);
 
-        operaciones.push({
-            updateOne:{
-                filter:{ sessionId:sessionId},
-                update:{$set:{Fin: fin, duracionTotal:duracion, paginaInicio: paginaInicio, paginaFin: paginaFin, esRebote: esRebote}}
-            }
-        })
-        }
-        catch(error){
-            console.log(`Error preparando update de sesión: ${error.message}`)
-        }
-    } //y aca las ejecuto, es decir, solo me conecto una vez a la db
-    if (operaciones.length > 0) {
-    let resultadoBulk = await client.db("PruebaBBDD").collection("sesiones").bulkWrite(operaciones);
-    console.log(`PrePro : Sesiones actualizadas: ${resultadoBulk.modifiedCount}`);
-}
+      //buscar ultima pagina visitada y la 1era
+      const rutas = doc.rutas || [];
+      let paginaInicio = rutas.length > 0 ? rutas[0] : null; 
+      let paginaFin = rutas.length > 0 ? rutas[rutas.length - 1] : null;
+
+      //tiempoSesion
+      let tiempoSesion = (fechaUltimoEvento - doc.inicio) / (1000 * 60);
+        
+      //esRebote = True si doc.eventosClave === []
+      let esRebote = doc.eventosClave.length > 0 ? true : false;
+
+      //Actualziar sesion
+      await db.collection("sesiones").updateOne({ _id: doc._id}, { $set: {Fin: fechaUltimoEvento, paginaInicio: paginaInicio, paginaAbandono: paginaFin, duracionSesion: tiempoSesion, esRebote: esRebote}});
+
+      }
 }
 
 //=====================================================================================================
@@ -456,9 +431,15 @@ async function limpiarDatos() {
   await limpiarFormularios(db);
   await limpiarEventos(db, sesionesValidas);
 
+  await finSesion(db);
+  await traducirGeolocalizaciones();
+
+  await actualizarUsuarios(db);
+  await limpiarRawBatches();
+
   console.log("CRON LIMPIEZA: Finalizado");
   await client.close();
 }
 
 // Programación: cada 3 minutos
-cron.schedule('*/3 * * * *', limpiarDatos);
+cron.schedule('*/2 * * * *', limpiarDatos);

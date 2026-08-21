@@ -27,13 +27,6 @@ services:
     depends_on:
       - mongo
 
-  sessions_users:
-    build: ./api
-    command: node addUser_Session.js
-    depends_on:
-      - mongo
-
-
   pagina:
     build: .
     ports: 
