@@ -63,7 +63,6 @@ async function limpiarSesiones(db) {
     if (!esString(doc.referrer)) { valido = false; motivos.push("referrer"); }
     if (!esArray(doc.rutas)) { valido = false; motivos.push("rutas"); }
     if (!esArray(doc.eventosClave)) { valido = false; motivos.push("eventosClave"); }
-    if (!doc.geo) { valido = false; motivos.push("geo");}
 
     // --- Validar estructura interna de rutas y eventosClave ---
     if (esArray(doc.rutas)) {
@@ -441,5 +440,5 @@ async function limpiarDatos() {
   await client.close();
 }
 
-// Programación: cada 3 minutos
+// Programación: cada 2 minutos
 cron.schedule('*/2 * * * *', limpiarDatos);
