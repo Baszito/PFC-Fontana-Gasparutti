@@ -71,7 +71,7 @@ async function limpiarSesiones(db) {
     }
     if (esArray(doc.eventosClave)) {
       const eventosValidos = doc.eventosClave.every(e => esString(e.tipo) && esFechaValida(e.timestamp));
-      if (!eventosValidos) { valido = false; motivos.push("eventosClave (estructura)"); }
+      if (!eventosValidos) { valido = false; motivos.push("eventosClave (estructura)"); } 
     }
 
       // Secuencia de timestamps en rutas debe ser ascendente
