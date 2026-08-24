@@ -368,16 +368,13 @@ async function actualizarUsuarios(db) {
         _id: { siteId: "$siteId", userId: "$userId" },
         primeraSesion: { $first: "$$ROOT" },
         ultimaSesion: { $last: "$$ROOT" },
-        totalSesiones: { $sum: 1 },
-        sesionesMobile: { $sum: { $cond: ["$is_mobile", 1, 0] } },
-        sesionesDesktop: { $sum: { $cond: ["$is_mobile", 0, 1] } }
+        totalSesiones: { $sum: 1 }
       }
     }
   ]).toArray();
 
   for (const r of resultados) {
     const idDoc = r._id.siteId + "_" + r._id.userId;
-    const isMobileHabitual = r.sesionesMobile > r.sesionesDesktop; // empate -> false
 
     await coleccionUsuarios.updateOne(
       { _id: idDoc },
@@ -386,12 +383,12 @@ async function actualizarUsuarios(db) {
           siteId: r._id.siteId,
           userId: r._id.userId,
           fechaInicio: r.primeraSesion.inicio,
-          referrerOriginal: r.primeraSesion.referrer
+          referrerOriginal: r.primeraSesion.referrer,
+          is_mobile: r.is_mobile
         },
         $set: {
           fechaFin: r.ultimaSesion.inicio,
-          totalSesiones: r.totalSesiones,
-          isMobile: isMobileHabitual
+          totalSesiones: r.totalSesiones
         }
       },
       { upsert: true }
