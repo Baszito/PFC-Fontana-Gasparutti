@@ -298,7 +298,7 @@ async function finSesion(db){
       let tiempoSesion = (fechaUltimoEvento - doc.inicio) / (1000 * 60);
         
       //esRebote = True si doc.eventosClave === []
-      let esRebote = doc.eventosClave.length > 0 ? true : false;
+      let esRebote = doc.eventosClave.length > 0 ? false : true;
 
       //Actualziar sesion
       await db.collection("sesiones").updateOne({ _id: doc._id}, { $set: {Fin: fechaUltimoEvento, paginaInicio: paginaInicio, paginaAbandono: paginaFin, duracionSesion: tiempoSesion, esRebote: esRebote}});

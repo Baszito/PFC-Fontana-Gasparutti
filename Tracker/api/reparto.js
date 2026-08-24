@@ -84,7 +84,7 @@ async function procesarBatches() { //funcion principal
                             siteId: batch.siteId,
                             sessionId: batch.sessionId,
                             id_formulario: evento.data.formulario,
-                            id_usuario: batch.userId,
+                            userId: batch.userId,
                             Inicio: new Date(evento.timestamp),
                             completado: false
                         }
@@ -126,7 +126,7 @@ async function procesarBatches() { //funcion principal
             },
             $setOnInsert: {
                 userId: batch.userId,
-                siteID: batch.siteID,
+                siteId: batch.siteId,
                 inicio: new Date(batch.inicio_sesion),
                 is_mobile: batch.is_mobile,
                 geo: batch.demografica,//me falta servicio de traduccion
