@@ -291,8 +291,8 @@ async function finSesion(db){
 
       //buscar ultima pagina visitada y la 1era
       const rutas = doc.rutas || [];
-      let paginaInicio = rutas.length > 0 ? rutas[0] : null; 
-      let paginaFin = rutas.length > 0 ? rutas[rutas.length - 1] : null;
+      let paginaInicio = rutas.length > 0 ? rutas[0].pagina : null; 
+      let paginaFin = rutas.length > 0 ? rutas[rutas.length - 1].pagina : null;
 
       //tiempoSesion
       let tiempoSesion = (fechaUltimoEvento - doc.inicio) / (1000 * 60);
@@ -387,7 +387,7 @@ async function actualizarUsuarios(db) {
           is_mobile: r.is_mobile
         },
         $set: {
-          fechaFin: r.ultimaSesion.inicio,
+          ultimaConexion: r.ultimaSesion.inicio,
           totalSesiones: r.totalSesiones
         }
       },
