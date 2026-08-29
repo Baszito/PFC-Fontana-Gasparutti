@@ -578,3 +578,10 @@ db.sesiones.aggregate([
     { upsert: true }
   );
 });
+
+
+Faltan:
+-> Total de usuarios
+-> Total de sesiones
+-> Pagina de inicio y página de abandono
+-> Disposición geografica
