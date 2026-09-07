@@ -14,6 +14,10 @@ function esString(v) {
   return typeof v === "string" && v.trim().length > 0;
 }
 
+function esStringOpcional(v) {
+  return typeof v == "string" || v === null || v === undefined;
+}
+
 // (es BOOLEANO)
 function esBooleano(v) {
   return typeof v === "boolean";
@@ -34,6 +38,11 @@ function esArray(v) {
   return Array.isArray(v);
 }
 
+// Verificar que el documento no tenga campos extra
+function tieneCamposExtra(obj, permitidos) {
+  return Object.keys(obj).some(k => !permitidos.includes(k));
+}
+
 // ------------------------------
 // ---------- SESIONES ----------
 // ------------------------------
@@ -48,6 +57,8 @@ async function limpiarSesiones(db) {
   //Guardamos todos los documentos de la colección en un array
   const docs = await coleccion.find({ revisado: { $exists: false } }).toArray();
 
+  const CAMPOS_PERMITIDOS_SESIONES = ["_id", "siteId", "userId", "sessionId", "inicio", "is_mobile", "referrer", "rutas", "eventosClave", "geo"]
+
   const idsInvalidos = [];
 
   for (const doc of docs) {
@@ -61,11 +72,13 @@ async function limpiarSesiones(db) {
     if (!esFechaValida(doc.inicio)) { valido = false; motivos.push("inicio"); }
     if (!esBooleano(doc.is_mobile)) { valido = false; motivos.push("isMobile"); }
     if (!esString(doc.referrer)) { valido = false; motivos.push("referrer"); }
-    if (!esArray(doc.rutas)) { valido = false; motivos.push("rutas"); }
+    if (!esArray(doc.rutas) || doc.rutas.length == 0) { valido = false; motivos.push("rutas"); }
     if (!esArray(doc.eventosClave)) { valido = false; motivos.push("eventosClave"); }
 
+    if (tieneCamposExtra(doc, CAMPOS_PERMITIDOS_SESIONES)) { valido = false; motivos.push("campos extra detectados"); }
+
     // --- Validar estructura interna de rutas y eventosClave ---
-    if (esArray(doc.rutas)) {
+    if (esArray(doc.rutas) && doc.rutas.length > 0) {
       const rutasValidas = doc.rutas.every(r => esString(r.pagina) && esFechaValida(r.timestamp));
       if (!rutasValidas) { valido = false; motivos.push("rutas (estructura)"); }
     }
@@ -74,23 +87,31 @@ async function limpiarSesiones(db) {
       if (!eventosValidos) { valido = false; motivos.push("eventosClave (estructura)"); } 
     }
 
-      // Secuencia de timestamps en rutas debe ser ascendente
+      //verificar y corregir el orden de "rutas" segun timestamp
+      let rutasDesordenadas = false;
       if (valido && esArray(doc.rutas) && doc.rutas.length > 1) {
         for (let i = 1; i < doc.rutas.length; i++) {
           if (doc.rutas[i].timestamp < doc.rutas[i - 1].timestamp) {
-            valido = false; motivos.push("rutas fuera de secuencia");
+            rutasDesordenadas = true;
             break;
           }
         }
+        if (rutasDesordenadas) {
+          doc.rutas.sort((a, b) => a.timestamp - b.timestamp);
+        }
       }
 
-      // Secuencia de timestamps en eventosClave debe ser ascendente
+      //verificar y corregir el orden de "eventosClave" segun timestamp
+      let eventosDesordenados = false;
       if (valido && esArray(doc.eventosClave) && doc.eventosClave.length > 1) {
         for (let i = 1; i < doc.eventosClave.length; i++) {
           if (doc.eventosClave[i].timestamp < doc.eventosClave[i - 1].timestamp) {
-            valido = false; motivos.push("eventosClave fuera de secuencia");
+            eventosDesordenados = true;
             break;
           }
+        }
+        if (eventosDesordenados) {
+          doc.eventosClave.sort((a, b) => a.timestamp - b.timestamp);
         }
       }
 
@@ -110,8 +131,12 @@ async function limpiarSesiones(db) {
         idsInvalidos.push(doc._id);
         console.log(`CRON LIMPIEZA sesiones: descartando ${doc._id} -> ${motivos.join(", ")}`);
       } else {
-        if (cerrada) {
-          await coleccion.updateOne({ _id: doc._id}, { $set: { revisado: ahora}});
+        const camposActualziar = {};
+        if (rutasDesordenadas) camposActualziar.rutas = doc.rutas;
+        if (eventosDesordenados) camposActualziar.eventosClave = doc.eventosClave;
+        if (cerrada) camposActualziar.revisado = ahora;
+        if (Object.keys(camposActualziar).length > 0) {
+          await coleccion.updateOne({ _id: doc._id}, { $set: camposActualziar });
         }
       }
     }
@@ -135,6 +160,8 @@ async function limpiarFormularios(db) {
   const ahora = new Date();
   const docs = await coleccion.find({ revisado: { $exists: false } }).toArray();
 
+  const CAMPOS_PERMITIDOS_FORMULARIOS = ["_id", "siteId", "userId", "sessionId", "Inicio", "Fin", "id_formulario", "completado", "camposInteractuados", "ultimoCampoCompleto"]
+
   const idsInvalidos = [];
 
   for (const doc of docs) {
@@ -148,6 +175,8 @@ async function limpiarFormularios(db) {
     if (!esFechaValida(doc.Inicio)) { valido = false; motivos.push("inicio"); }
     if (!esString(doc.id_formulario)) { valido = false; motivos.push("id_formulario"); }
     if (!esBooleano(doc.completado)) { valido = false; motivos.push("completado"); }
+
+    if (tieneCamposExtra(doc, CAMPOS_PERMITIDOS_FORMULARIOS)) { valido = false; motivos.push("campos extra detectados"); }
 
     if (doc.camposInteractuados !== undefined && doc.camposInteractuados !== null) {
       if (!esArray(doc.camposInteractuados)) {
@@ -204,16 +233,36 @@ async function limpiarFormularios(db) {
 // Campos obligatorios de metadata según el tipo de evento
 const CAMPOS_POR_TIPO = {
   pageview: ["pagina"],
-  click: ["elemento", "esInteractivo", "pagina"],
-  scroll: ["pagina", "valor"],
-  hover: ["elemento", "pagina", "duracion", "goal"],
-  objetivo: ["subtipo", "pagina"]
+  click: ["elemento", "esInteractivo"],
+  scroll: [ "valor"],
+  hover: ["elemento", "duracion", "goal"],
+  objetivo: ["subtipo"]
 };
+
+const CAMPOS_PERMITIDOS_EVENTO = ["_id", "timestamp", "metadata", "revisado"];
+const CAMPOS_BASE_METADATA = ["siteId", "sessionId", "tipo", "pagina"];
+const TIPOS_CAMPOS_METADATA = {
+  pagina: esString,
+  elemento: esStringOpcional,
+  goal: esString,
+  subtipo: esString,
+  esInteractivo: esBooleano,
+  valor: esNumero,
+  duracion: esNumero
+}
+function tieneCamposExtraMetadata(metadata, tipo){
+  const permitidos = [...CAMPOS_BASE_METADATA, ...(CAMPOS_POR_TIPO[tipo] || [])];
+  return Object.keys(metadata).some(k => !permitidos.includes(k));
+}
 
 function metadataValida(tipo, metadata) {
   const campos = CAMPOS_POR_TIPO[tipo];
   if (!campos) return false; // tipo desconocido -> corrupto
-  return campos.every(c => metadata[c] !== undefined && metadata[c] !== null);
+  return campos.every(c => {
+    if (metadata[c] === undefined || metadata[c] === null) return false;
+    const validador = TIPOS_CAMPOS_METADATA[c];
+    return validador ? validador(metadata[c]) : true;
+  });
 }
 
 async function limpiarEventos(db, sesionesValidas) {
@@ -228,6 +277,7 @@ async function limpiarEventos(db, sesionesValidas) {
     const motivos = [];
 
     if (!esFechaValida(doc.timestamp)) { valido = false; motivos.push("timestamp"); }
+    if (tieneCamposExtra(doc, CAMPOS_PERMITIDOS_EVENTO)) { valido = false; motivos.push("campos extra detectados"); }
 
     const meta = doc.metadata;
     if (!meta || typeof meta !== "object") {
@@ -235,13 +285,16 @@ async function limpiarEventos(db, sesionesValidas) {
     } else {
       if (!esString(meta.siteId)) { valido = false; motivos.push("metadata.siteId"); }
       if (!esString(meta.sessionId)) { valido = false; motivos.push("metadata.sessionId"); }
+      if (!esString(meta.pagina)) { valido = false; motivos.push("metadata.pagina");}
       if (!esString(meta.tipo)) {
         valido = false; motivos.push("metadata.tipo");
       } else if (!metadataValida(meta.tipo, meta)) {
         valido = false; motivos.push(`campos faltantes para tipo=${meta.tipo}`);
+      } else if (tieneCamposExtraMetadata(meta, meta.tipo)) {
+        valido = false; motivos.push(`campos extra en metadata para tipo=${meta.tipo}`);
       }
 
-      // Verificar que la sesión referenciada exista (si sesiones ya fue limpiada)
+      // Verificar que la sesión referenciada exista 
       if (valido && esString(meta.siteId) && esString(meta.sessionId)) {
         const clave = `${meta.siteId}_${meta.sessionId}`;
         if (!sesionesValidas.has(clave)) {
