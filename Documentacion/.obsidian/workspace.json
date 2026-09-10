@@ -11,10 +11,14 @@
             "id": "1d702abdc0c1504b",
             "type": "leaf",
             "state": {
-              "type": "empty",
-              "state": {},
+              "type": "markdown",
+              "state": {
+                "file": "Procesamiento/Procesamiento.md",
+                "mode": "source",
+                "source": false
+              },
               "icon": "lucide-file",
-              "title": "Nueva pestaña"
+              "title": "Procesamiento"
             }
           }
         ]
@@ -79,7 +83,7 @@
       }
     ],
     "direction": "horizontal",
-    "width": 482.5
+    "width": 200
   },
   "right": {
     "id": "a51101869c4290c2",

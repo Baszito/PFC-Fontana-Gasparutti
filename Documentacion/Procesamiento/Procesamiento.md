@@ -10,5 +10,16 @@ metricas_resumen:
 
 métricas_usuario:
 
-	(Estan dentro de la colección usuarios)
-	(Dicho así para una mejor imágen mental)
+Aca lo mejor seria tener un campo tipo metricas{} dentro de usuario
+- total_sesiones : Contador de sesiones
+- duracionPromedio : Duracion promedio de la sesion.
+- paginasPorSesionPromedio : promedio de cantidad de paginas por sesion.
+- tasaRebote : Fraccion de sesiones que son rebote
+- tasaConversion : Sesiones con al menos un evento objetivo/total de sesiones
+- dispositivoPredominante : is_mobile de sus sesiones
+- origenPredominante : Referrer predominante
+- antiguedad : ultimasesion-primerasesion
+- frecuenciaRecurrencia : totalSesioens / diasDesdePrimeraSesion
+- InterrracionPromedio : Promedio de clicks+hovers+scrolls
+- tiempoHastaConversion 
+	
