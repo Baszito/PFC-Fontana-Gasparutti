@@ -578,13 +578,10 @@ db.sesiones.aggregate([
     { upsert: true }
   );
 });
-<<<<<<< Updated upstream
-=======
 
 
 Faltan:
--> Total de usuarios por sitio
--> Total de sesiones por sitio
--> Mayor pagina de inicio y página de abandono por sitio
--> Mayor disposición geográfica por sitio
->>>>>>> Stashed changes
+-> Total de usuarios
+-> Total de sesiones
+-> Pagina de inicio y página de abandono
+-> Disposición geografica
