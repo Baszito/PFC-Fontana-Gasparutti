@@ -119,12 +119,21 @@ async function limpiarSesiones(db) {
       let cerrada = false;
       if (valido) {
         let ultimoEvento = await db.collection("eventos").findOne({ "metadata.siteId": doc.siteId, "metadata.sessionId": doc.sessionId }, { sort: { timestamp: -1 }});
-        let fechaUltimoEvento = ultimoEvento.timestamp;
+        
+        if (!ultimoEvento) {
+          console.log(`No se encontró ningún evento para sesión ${doc.sessionId} (siteId: ${doc.siteId})`);
+          valido = false // o lo que corresponda: saltar esta sesión y seguir con la próxima
+        }else{
+          let fechaUltimoEvento = ultimoEvento.timestamp;
 
-        let dif = (ahora - fechaUltimoEvento) / (1000 * 60); 
-        if (dif >= LIMITE_MINUTOS_SESION_QUIETA) {
-          cerrada = true;
+          let dif = (ahora - fechaUltimoEvento) / (1000 * 60); 
+          if (dif >= LIMITE_MINUTOS_SESION_QUIETA) {
+            cerrada = true;
+          }
+
         }
+
+        
       }
 
       if (!valido) {
@@ -491,4 +500,4 @@ async function limpiarDatos() {
 }
 
 // Programación: cada 2 minutos
-cron.schedule('*/2 * * * *', limpiarDatos);
+cron.schedule('*/3 * * * *', limpiarDatos);
