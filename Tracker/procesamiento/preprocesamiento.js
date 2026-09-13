@@ -344,11 +344,17 @@ async function finSesion(db){
 
     for (const doc of sesiones_pendientes) {
 
-      //Buscar el último evento hecho por esta sesion
-      let ultimoEvento = await db.collection("eventos").findOne({ "metadata.siteId": doc.siteId, "metadata.sessionId": doc.sessionId }, { sort: { timestamp: -1 }});
-      
-      //guardar timestamp + minutos de espera de cierre
-      let fechaUltimoEvento = ultimoEvento.timestamp;
+    let ultimoEvento = await db.collection("eventos").findOne(
+      { "metadata.siteId": doc.siteId, "metadata.sessionId": doc.sessionId },
+      { sort: { timestamp: -1 } }
+    );
+
+    if (!ultimoEvento) {
+      console.log(`CRON FIN SESION: sin eventos para ${doc.sessionId}, se omite`);
+      continue;
+    }
+
+    let fechaUltimoEvento = ultimoEvento.timestamp;
       fechaUltimoEvento.setMinutes(fechaUltimoEvento.getMinutes() + LIMITE_MINUTOS_SESION_QUIETA);
 
       //buscar ultima pagina visitada y la 1era
@@ -456,7 +462,7 @@ async function actualizarUsuarios(db) {
       { upsert: true }
     );
   }
-
+  console.log("CRON PROCESAMIENTO : USUARIOS : ")
   console.log(`CRON AGREGACION: ${resultados.length} usuario(s) actualizado(s)/creado(s)`);
 }
 
@@ -500,4 +506,4 @@ async function limpiarDatos() {
 }
 
 // Programación: cada 2 minutos
-cron.schedule('*/3 * * * *', limpiarDatos);
+cron.schedule('*/110 * * * * *', limpiarDatos);
