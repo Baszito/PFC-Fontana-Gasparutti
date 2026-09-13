@@ -125,6 +125,7 @@ async function procesarBatches() { //funcion principal
                 eventosClave: { $each: eventosClave }
             },
             $setOnInsert: {
+                siteId: batch.siteId,
                 userId: batch.userId,
                 siteId: batch.siteId,
                 inicio: new Date(batch.inicio_sesion),

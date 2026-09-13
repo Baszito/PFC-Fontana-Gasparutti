@@ -35,6 +35,14 @@ services:
     command: node preprocesamiento.js
     depends_on:
       - mongo
-      
+  
+  procesamiento:
+    build: ./api
+    ports:
+      - 7000:7000
+    command: node procesamiento.js
+    depends_on:
+      - mongo
+
 volumes:
   db:
