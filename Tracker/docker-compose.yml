@@ -29,17 +29,20 @@ services:
       - api
 
   preprocesamiento:
-    build: ./procesamiento #se arranca al mismo tiempo que la api
+    build: ./api #se arranca al mismo tiempo que la api
+    ports:
+      - 6000:6000
     command: node preprocesamiento.js
     depends_on:
       - mongo
   
   procesamiento:
-    build: ./procesamiento
+    build: ./api
+    ports:
+      - 7000:7000
     command: node procesamiento.js
     depends_on:
       - mongo
-      - preprocesamiento
 
 volumes:
   db:
