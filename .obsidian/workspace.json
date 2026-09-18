@@ -4,11 +4,11 @@
     "type": "split",
     "children": [
       {
-        "id": "990b8bee7da7ced1",
+        "id": "4867c53223e31d9b",
         "type": "tabs",
         "children": [
           {
-            "id": "df47970fbbc8b37d",
+            "id": "45f9327f7057e1da",
             "type": "leaf",
             "state": {
               "type": "empty",
@@ -181,7 +181,7 @@
       "bases:Crear nueva base": false
     }
   },
-  "active": "df47970fbbc8b37d",
+  "active": "45f9327f7057e1da",
   "lastOpenFiles": [
     "Documentacion/Procesamiento/Procesamiento.md",
     "Documentacion/Procesamiento/Pre-Procesamiento.md",
