@@ -286,7 +286,7 @@ page.addEventListener("visibilitychange", function(){
         eventos_batch = [];
     }
 });
-
+console.log(site_id)
 /* ==========================================================
    Envio de sesion por TIMEOUT
    ========================================================== */

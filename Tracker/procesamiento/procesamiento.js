@@ -513,25 +513,50 @@ async function calcularGeoHabitual(db) {
 // ============================================================
 // ====== Metricas de usuario ======
 // ============================================================
-async function metricas_usuario(db){
-
+async function metricas_usuario(db) {
+  //Me traigo las colecciones que voy a usar
   const usuarios = db.collection("usuarios");
   const sesiones = db.collection("sesiones");
 
+  //Solo se van a recalcular las metricas de los usuarios que tengan una sesion hace 24 hs
+
+  const hace24hs = new Date(Date.now() - 24 * 60 * 60 * 1000);
+
+  //Esto es un pequeño salvaguarda, si no hay users nuevos, no se recalcula nada
+  const activos = await sesiones.aggregate([
+    { $match: { inicio: { $gte: hace24hs } } },
+    { $group: { _id: { siteId: "$siteId", userId: "$userId" } } }
+  ]).toArray();
+
+  if (activos.length === 0) {
+    console.log("CRON METRICAS: sin usuarios activos en las últimas 24hs");
+    return;
+  }
+
+  //Me guardo los id de los usuarios activos del sitio
+  const clavesActivas = activos.map(a => `${a._id.siteId}_${a._id.userId}`);
+
+  //Esto es una agregacion que se hizo despues, despues lo explico bien en la docu
+  
+  //primero, vamos con las metricas "totales"
   const totales = await sesiones.aggregate([
-    { $match: { Fin: { $exists: true } } },
-    { $addFields: 
-      { cantidadPaginas: {$size: { $ifNull: ["$rutas", []] }},
-        tuvoConversion: {$gt: [{ $size: { $ifNull: ["$eventosClave", []] } }, 0]},
-        tuvoCarrito: {$in: ["añadir-a-carrito", { $ifNull: ["$eventosClave.subtipo", []] }]},
+
+    { $match: { Fin: { $exists: true } } }, //solo agarro las que terminaron
+    { $addFields: { claveUsuario: { $concat: ["$siteId", "_", "$userId"] } } }, //aca me sirve el mapa, es para matchear con las claves de usuario que armo lucas
+    { $match: { claveUsuario: { $in: clavesActivas } } }, //y busco por eso que arme
+    {
+      $addFields: {
+        cantidadPaginas: { $size: { $ifNull: ["$rutas", []] } }, //contador de rutas en  las sesiones que tuvo
+        tuvoConversion: { $gt: [{ $size: { $ifNull: ["$eventosClave", []] } }, 0] }, // esto me va a servir para varias cosas
+        tuvoCarrito: {$in: ["agregar_carrito", { $ifNull: ["$eventosClave.subtipo", []] }]},
         tuvoCompra: {$in: ["compra", { $ifNull: ["$eventosClave.subtipo", []] }]}
       }
     },
     {
       $group: {
-        _id: "$userId",
+        _id: { siteId: "$siteId", userId: "$userId" }, 
         totalSesiones: { $sum: 1 },
-        duracionPromedio: { $avg: "$duracionSesion" },
+        duracionPromedio: { $avg: "$duracionSesion" }, 
         tasaRebote: { $avg: { $cond: ["$esRebote", 1, 0] } },
         paginasPorSesionPromedio: { $avg: "$cantidadPaginas" },
         tasaConversion: { $avg: { $cond: ["$tuvoConversion", 1, 0] } },
@@ -543,13 +568,13 @@ async function metricas_usuario(db){
     },
     {
       $addFields: {
-        diasActivo: { $divide: [{ $subtract: ["$ultimaSesion", "$primeraSesion"] }, 1000 * 60 * 60 * 24] }
+        diasActivo: { $divide: [{ $subtract: ["$ultimaSesion", "$primeraSesion"] }, 1000 * 60 * 60 * 24] } //cantidad de dias en los que entro
       }
     },
     {
       $addFields: {
         frecuenciaRecurrencia: {
-          $cond: [{ $eq: ["$diasActivo", 0] }, 0, { $divide: ["$totalSesiones", "$diasActivo"] }]
+          $cond: [{ $eq: ["$diasActivo", 0] }, 0, { $divide: ["$totalSesiones", "$diasActivo"] }] //frecuencia de recurrencia
         },
         tasaAbandonoCarrito: {
           $cond: [{ $eq: ["$sesionesConCarrito", 0] }, 0, { $divide: ["$sesionesAbandonoCarrito", "$sesionesConCarrito"] }]
@@ -562,18 +587,24 @@ async function metricas_usuario(db){
         sesionesAbandonoCarrito: 0
       }
     }
-  ]).toArray();
+  ]).toArray(); // lo metemos en un array a todo esto
 
-  // Origen predominante: pipeline aparte (no combina bien con el $group anterior)
+  //todoooo esto es para calcular el origen predominante, esto nos sirve para saber si es que siempre
+  //entran por otra pag, o entran directo
   const origenes = await sesiones.aggregate([
-    { $group: { _id: { userId: "$userId", referrer: "$referrer" }, cantidad: { $sum: 1 } } },
+    { $addFields: { claveUsuario: { $concat: ["$siteId", "_", "$userId"] } } }, //
+    { $match: { claveUsuario: { $in: clavesActivas } } },
+    { $group: { _id: { siteId: "$siteId", userId: "$userId", referrer: "$referrer" }, cantidad: { $sum: 1 } } },
     { $sort: { cantidad: -1 } },
-    { $group: { _id: "$_id.userId", origenPredominante: { $first: "$_id.referrer" } } }
+    { $group: { _id: { siteId: "$_id.siteId", userId: "$_id.userId" }, origenPredominante: { $first: "$_id.referrer" } } }
   ]).toArray();
 
-  // Interacciones promedio + tiempo hasta conversión: necesitan cruzar con eventos
+  //y ahora van las metricas de interaccion promedio
+  //y tiempo hasta conversion
   const interacciones = await sesiones.aggregate([
     { $match: { Fin: { $exists: true } } },
+    { $addFields: { claveUsuario: { $concat: ["$siteId", "_", "$userId"] } } },
+    { $match: { claveUsuario: { $in: clavesActivas } } },
     {
       $lookup: {
         from: "eventos",
@@ -582,7 +613,7 @@ async function metricas_usuario(db){
           { $match: { $expr: { $and: [
             { $eq: ["$metadata.siteId", "$$site"] },
             { $eq: ["$metadata.sessionId", "$$session"] }
-          ]}}}
+          ] } } }
         ],
         as: "eventosSesion"
       }
@@ -617,17 +648,51 @@ async function metricas_usuario(db){
     },
     {
       $group: {
-        _id: "$userId",
+        _id: { siteId: "$siteId", userId: "$userId" },
         interaccionesPromedio: { $avg: "$cantidadInteracciones" },
         tiempoHastaConversion: { $avg: "$tiempoHastaConversionSesion" }
       }
     }
   ]).toArray();
 
-  
-  return { totales, origenes, interacciones };
+  //y ahora va toda una logica para matchear con un mapa 
+  //las que van en usuario o no
+  const mapa = new Map();
+
+  for (const t of totales) {
+    const key = `${t._id.siteId}_${t._id.userId}`;
+    const { _id, ...resto } = t;
+    mapa.set(key, resto);
+  }
+  for (const o of origenes) {
+    const key = `${o._id.siteId}_${o._id.userId}`;
+    mapa.set(key, { ...(mapa.get(key) || {}), origenPredominante: o.origenPredominante });
+  }
+  for (const i of interacciones) {
+    const key = `${i._id.siteId}_${i._id.userId}`;
+    mapa.set(key, { ...(mapa.get(key) || {}), interaccionesPromedio: i.interaccionesPromedio, tiempoHastaConversion: i.tiempoHastaConversion });
+  }
+
+  //aca hago los update de las metricas
+  const operaciones = [];
+  for (const [idDoc, metricas] of mapa.entries()) {
+    operaciones.push({
+      updateOne: {
+        filter: { _id: idDoc },
+        update: { $set: { metricas } }
+      }
+    });
+  }
+
+  //Pequeño if, para saber cuantos actualize
+  if (operaciones.length > 0) {
+    const resultado = await usuarios.bulkWrite(operaciones);
+    console.log(`CRON METRICAS: ${resultado.modifiedCount} usuario(s) actualizado(s)`);
+  }
 
 }
+
+
 
 
 
@@ -666,12 +731,8 @@ async function procesarMetricas() {
   await calcularPaginasHabituales(db);
   await calcularGeoHabitual(db);
 
-  const metricas = await metricas_usuario(db);
+  await metricas_usuario(db);
 
-  console.log("MÉTRICAS:");
-  console.log(JSON.stringify(metricas, null, 2));
-
-  console.log("CRON PROCESAMIENTO: Finalizado");
   await client.close();
 }
 
