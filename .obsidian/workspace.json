@@ -11,10 +11,14 @@
             "id": "45f9327f7057e1da",
             "type": "leaf",
             "state": {
-              "type": "empty",
-              "state": {},
+              "type": "markdown",
+              "state": {
+                "file": "Documentacion/Análisis/Algoritmo A-priori.md",
+                "mode": "source",
+                "source": false
+              },
               "icon": "lucide-file",
-              "title": "Nueva pestaña"
+              "title": "Algoritmo A-priori"
             }
           }
         ]
@@ -183,8 +187,14 @@
   },
   "active": "45f9327f7057e1da",
   "lastOpenFiles": [
+    "Pasted image 20260921202540.png",
+    "Documentacion/Análisis/Algoritmo A-priori.md",
+    "'antecedents', 'consequents', 'support', 'confidence', 'lift'.md",
+    "Documentacion/Procesamiento/Extracción.md",
+    "Documentacion/Análisis",
+    "Documentacion/Procesamiento/Sin nombre",
     "Documentacion/Procesamiento/Procesamiento.md",
-    "Documentacion/Procesamiento/Pre-Procesamiento.md",
-    "Documentacion/Procesamiento/Extracción.md"
+    "Sin nombre",
+    "Documentacion/Procesamiento/Pre-Procesamiento.md"
   ]
 }
