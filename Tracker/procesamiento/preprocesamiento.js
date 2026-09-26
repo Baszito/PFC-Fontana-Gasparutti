@@ -349,7 +349,7 @@ async function finSesion(db){
       
       //guardar timestamp + minutos de espera de cierre
       let fechaUltimoEvento = ultimoEvento.timestamp;
-      fechaUltimoEvento.setMinutes(fechaUltimoEvento.getMinutes() + LIMITE_MINUTOS_SESION_QUIETA);
+      fechaUltimoEvento.setMinutes(fechaUltimoEvento.getMinutes() + 0.1);
 
       //buscar ultima pagina visitada y la 1era
       const rutas = doc.rutas || [];

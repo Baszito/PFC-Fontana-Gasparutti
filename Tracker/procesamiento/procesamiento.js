@@ -519,9 +519,7 @@ async function metricas_usuario(db) {
   const sesiones = db.collection("sesiones");
 
   //Solo se van a recalcular las metricas de los usuarios que tengan una sesion hace 24 hs
-
   const hace24hs = new Date(Date.now() - 24 * 60 * 60 * 1000);
-
   //Esto es un pequeño salvaguarda, si no hay users nuevos, no se recalcula nada
   const activos = await sesiones.aggregate([
     { $match: { inicio: { $gte: hace24hs } } },
@@ -562,13 +560,14 @@ async function metricas_usuario(db) {
         tasaConversion: { $avg: { $cond: ["$tuvoConversion", 1, 0] } },
         sesionesConCarrito: { $sum: { $cond: ["$tuvoCarrito", 1, 0] } },
         sesionesAbandonoCarrito: { $sum: { $cond: [{ $and: ["$tuvoCarrito", { $not: ["$tuvoCompra"] }] }, 1, 0] } },
+        usuarioMobile: { $first: "$is_mobile" },
         primeraSesion: { $min: "$inicio" },
         ultimaSesion: { $max: "$inicio" }
       }
     },
     {
       $addFields: {
-        diasActivo: { $divide: [{ $subtract: ["$ultimaSesion", "$primeraSesion"] }, 1000 * 60 * 60 * 24] } //cantidad de dias en los que entro
+        diasActivo: { $ceil: { $divide: [{ $subtract: ["$ultimaSesion", "$primeraSesion"] }, 1000 * 60 * 60 * 24] } }
       }
     },
     {
@@ -650,7 +649,7 @@ async function metricas_usuario(db) {
       $group: {
         _id: { siteId: "$siteId", userId: "$userId" },
         interaccionesPromedio: { $avg: "$cantidadInteracciones" },
-        tiempoHastaConversion: { $avg: "$tiempoHastaConversionSesion" }
+        tiempoHastaConversion: { $avg: "$tiempoHastaConversionSesion"}
       }
     }
   ]).toArray();
@@ -691,10 +690,6 @@ async function metricas_usuario(db) {
   }
 
 }
-
-
-
-
 
 // ============================================================
 // ======================= FUNCIÓN PRINCIPAL ========================
