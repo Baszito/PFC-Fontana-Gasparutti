@@ -23,8 +23,8 @@ def arboles_decision (df_usuarios):
 # =========================
 # Analisis
 # =========================
-def analisis (df_usuarios,df_sesiones):
-    patrones_secuenciales = prefix(df_usuarios)
+def analisis (df_usuarios,df_sesiones,soporte_secuencial):
+    patrones_secuenciales = prefix(df_sesiones,soporte_secuencial)
     return patrones_secuenciales
 
 # =========================
