@@ -1,8 +1,11 @@
 import numpy as np
 import pandas as pd
+import matplotlib.pyplot as plt
+from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
 from sklearn.cluster import KMeans
 from sklearn.metrics import silhouette_score
+
 debug = False
 features_numericas = [
     "metricas.duracionPromedio",
@@ -15,6 +18,7 @@ features_numericas = [
     "metricas.diasActivo",
 ]
 
+#-----funcion auxiliar para preparar features
 def preparar_features(df_usuarios):
     faltantes = [c for c in features_numericas if c not in df_usuarios.columns] #esto es un freno de seguridad
     if faltantes:
@@ -28,10 +32,11 @@ def preparar_features(df_usuarios):
     ) #descarto las que le falte alguna feature, menos TiempoHastaConversion
     # Los usuarios que no convirtieron reciben una penalización fija.
     # De esta forma el valor no depende del resto de los usuarios.
-    df["metricas.tiempoHastaConversion"] = (
-        df["metricas.tiempoHastaConversion"].fillna(-1)
-    )
-    # Aplicamos logaritmo a las features con cola larga.
+    df["metricas.tiempoHastaConversion"] = pd.to_numeric(
+    df["metricas.tiempoHastaConversion"],
+        errors="coerce"
+    ).fillna(-1)
+    # aplicamos logaritmo a las features con cola larga.
     df["metricas.duracionPromedio"] = np.log1p(df["metricas.duracionPromedio"])
     df["metricas.interaccionesPromedio"] = np.log1p(df["metricas.interaccionesPromedio"])
     df["metricas.paginasPorSesionPromedio"] = np.log1p(df["metricas.paginasPorSesionPromedio"])
@@ -39,6 +44,7 @@ def preparar_features(df_usuarios):
     ids = df["_id"].reset_index(drop=True)
     return X, ids #devuelvo las features con sus correspondientes ids
 
+#aca usamos el silhouette para calcular el k dinamicamente
 def encontrar_k_optimo(X_escalado, k_min=2, k_max=5):
     mejor_k = k_min
     mejor_score = -1
@@ -53,11 +59,14 @@ def encontrar_k_optimo(X_escalado, k_min=2, k_max=5):
     return mejor_k, resultados
 
 def kmeans(df_usuarios, k=None, k_min=2, k_max=5):
+    #-----------------------------------------------Preparacion previa
     X, ids = preparar_features(df_usuarios) #preparamos las features
     if len(X) < k_min:
         raise ValueError(f"No hay suficientes usuarios con métricas ({len(X)}) para formar al menos {k_min} clusters")
     scaler = StandardScaler() #funcion de escalado de sklearn, sirve para que una sola feature no sea determinante
     X_escalado = scaler.fit_transform(X) #aca se escalan
+
+    #-----------------------------------------------Calculo del K
     k_max = min(k_max, len(X) - 1)
     if k is None:
         k, scores_por_k = encontrar_k_optimo(X_escalado, k_min, k_max)
@@ -68,14 +77,18 @@ def kmeans(df_usuarios, k=None, k_min=2, k_max=5):
     modelo = KMeans(n_clusters=k, random_state=42, n_init=10) #el k medias estandar de SKlearn
     etiquetas = modelo.fit_predict(X_escalado) #y aca etiqueto
     silhouette = silhouette_score(X_escalado, etiquetas)
+        #Si el k no es "bueno", no se hacen recomendaciones
     if silhouette <= 0.25:
         return False
+
+    #-----------------------------------------------Perfilado de los clusteres
     asignaciones = [
         {"_id": id_, "cluster": int(cluster)}
         for id_, cluster in zip(ids, etiquetas)
     ] #esto si merece una explicacion mas detallada
     #fit_predict me devuelve un array de numeros correspondiente a los clusteres
     # entonces con zip emparejo id con su cluster segun etiquetas
+
     X_con_cluster = X.copy() #hago una copia, es para el siguiente paso
     X_con_cluster["cluster"] = etiquetas
     perfiles = {} #y aca de nuevo, explicacion

@@ -62,6 +62,8 @@ print(f"Cantidad de columnas: {len(df_sesiones.columns)}")
 # =========================
 
 patrones_secuenciales,clusters = analisis(df_usuarios,df_sesiones,soporte_secuencial)
+
+
 # =========================
 # Escritura
 # =========================
@@ -77,6 +79,20 @@ patrones_secuenciales,clusters = analisis(df_usuarios,df_sesiones,soporte_secuen
 #db.analisis_secuencial.insert_many(clusters)
 #db.analisis_asociacion.insert_many(asociaciones)
 #db.analisis_prediccion.insert_many(predicciones)
+
+for site_id, resultado in clusters.items():
+    if resultado == False:
+        continue
+    db.analisis_clusters.insert_one({
+        "siteId": site_id,
+        "fechaGeneracion": datetime.now(),
+        "k": resultado["k"],
+        "silhouette": resultado["silhouette"],
+        "scoresPorK": resultado["scoresPorK"],
+        "asignaciones": resultado["asignaciones"],
+        "perfiles": resultado["perfiles"]
+    })
+
 # =========================
 # FINALIZAR
 # =========================
