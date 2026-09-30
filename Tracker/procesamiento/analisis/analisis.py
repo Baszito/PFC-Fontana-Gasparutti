@@ -1,4 +1,5 @@
 from secuencial import prefix as prefix
+from asociacion import reglas_asociacion as RA
 # =========================
 # Patrones secuenciales (prefixSpan)
 # =========================
@@ -11,8 +12,6 @@ def clustering_usuarios (df_usuarios):
 # =========================
 # Reglas de asociacion (A-Priori)
 # =========================
-def reglas_asociacion (df_usuarios):
-    pass
 
 # =========================
 # Arboles de decision
@@ -25,6 +24,7 @@ def arboles_decision (df_usuarios):
 # =========================
 def analisis (df_usuarios,df_sesiones):
     patrones_secuenciales = prefix(df_usuarios)
+    #reglas_asociacion = RA(df_sesiones)
     return patrones_secuenciales
 
 # =========================
