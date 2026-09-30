@@ -20,20 +20,20 @@ def extraer_secuencia(sesion):
     return [p for i, p in enumerate(secuencia) if i == 0 or p != secuencia[i - 1]]   #y las normalizamos
 
 def prefix(sesiones, soporte_minimo=0.05, longitud_minima=3, top=10):
-    sesiones = sesiones.to_dict("records")
-    secuencias_por_sitio = defaultdict(list)
+    sesiones = sesiones.to_dict("records") 
+    secuencias_por_sitio = defaultdict(list) #lista vacia en donde voy a ingresar los patrones
     for sesion in sesiones:
-        secuencia = extraer_secuencia(sesion)
+        secuencia = extraer_secuencia(sesion) #extraemos las secuencias de rutas
         if secuencia:
-            secuencias_por_sitio[sesion["siteId"]].append(secuencia)
+            secuencias_por_sitio[sesion["siteId"]].append(secuencia) #y la chantamos en la lista
 
-    resultados_por_sitio = {}
-    for site_id, secuencias in secuencias_por_sitio.items():
-        total = len(secuencias)
-        minimo = max(2, math.ceil(round(soporte_minimo * total, 6)))
-        ps = PrefixSpan(secuencias)
-        resultados = ps.frequent(minimo, closed=True)
-        filtrados = [(s, round(s / total, 4), p) for s, p in resultados if len(p) >= longitud_minima]
-        filtrados.sort(key=lambda x: (-x[0], -len(x[2])))
-        resultados_por_sitio[site_id] = filtrados[:top]
+    resultados_por_sitio = {} #vector de resultados
+    for site_id, secuencias in secuencias_por_sitio.items(): #por cada item
+        total = len(secuencias) #longitud
+        minimo = max(2, math.ceil(round(soporte_minimo * total, 6))) #aca proporciono el soporte minimo, o sea, que aparezca en minimo un X porcentaje de las sesiones, con 6 decimales
+        ps = PrefixSpan(secuencias) #hacemos prefixspan sobre la secuencia
+        resultados = ps.frequent(minimo, closed=True) #al resultado de las mos mas frecuentes que pasen el minimo, el closed es para que se quede con la mayor en donde aparece X secuencia
+        filtrados = [(s, round(s / total, 4), p) for s, p in resultados if len(p) >= longitud_minima] # y esto es para filtrar por los parametros anteriores de longitud minima y soporte minimo
+        filtrados.sort(key=lambda x: (-x[0], -len(x[2]))) #los ordenamos mayor a menor
+        resultados_por_sitio[site_id] = filtrados[:top] #y los chanto al tope de la lista
     return resultados_por_sitio

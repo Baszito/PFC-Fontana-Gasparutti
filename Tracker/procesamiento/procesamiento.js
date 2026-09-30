@@ -568,7 +568,7 @@ async function metricas_usuario(db) {
     {
       $addFields: {
         diasActivo: { $ceil: { $divide: [{ $subtract: ["$ultimaSesion", "$primeraSesion"] }, 1000 * 60 * 60 * 24] } }
-      }
+      },
     },
     {
       $addFields: {

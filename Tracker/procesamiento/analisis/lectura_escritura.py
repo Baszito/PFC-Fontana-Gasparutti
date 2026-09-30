@@ -61,19 +61,18 @@ print(f"Cantidad de columnas: {len(df_sesiones.columns)}")
 # Pasamos a analisis
 # =========================
 
-patrones_secuenciales = analisis(df_usuarios,df_sesiones,soporte_secuencial)
-print(patrones_secuenciales)
+patrones_secuenciales,clusters = analisis(df_usuarios,df_sesiones,soporte_secuencial)
 # =========================
 # Escritura
 # =========================
 
-for site_id, resultados in patrones_secuenciales.items():
-        db.analisis_patrones_secuenciales.insert_one({
-            "siteId": site_id,
-            "fechaGeneracion": datetime.now(),
-            "soporteMinimo": soporte_secuencial,
-            "patrones": [{"soporte": s, "proporcion": pr, "secuencia": p} for s, pr, p in resultados]
-        })
+# for site_id, resultados in patrones_secuenciales.items():
+#         db.analisis_patrones_secuenciales.insert_one({
+#             "siteId": site_id,
+#             "fechaGeneracion": datetime.now(),
+#             "soporteMinimo": soporte_secuencial,
+#             "patrones": [{"soporte": s, "proporcion": pr, "secuencia": p} for s, pr, p in resultados]
+#         })
 
 #db.analisis_secuencial.insert_many(clusters)
 #db.analisis_asociacion.insert_many(asociaciones)
