@@ -1,10 +1,9 @@
-import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
+import pandas as pd
 from sklearn.preprocessing import StandardScaler
-from sklearn.decomposition import PCA
-from sklearn.cluster import KMeans 
-
+from sklearn.cluster import KMeans
+from sklearn.metrics import silhouette_score
+debug = False
 features_numericas = [
     "metricas.duracionPromedio",
     "metricas.paginasPorSesionPromedio",
@@ -16,17 +15,11 @@ features_numericas = [
     "metricas.diasActivo",
 ]
 
-features_categoricas = [
-    "is_mobile",
-    "metricas.origenPredominante",
-]
-
 def preparar_features(df_usuarios):
-    columnas_necesarias = features_numericas + features_categoricas #calculamos todas las features que vamos a necesitar
-    faltantes = [c for c in columnas_necesarias if c not in df_usuarios.columns] #esto es un freno de seguridad
+    faltantes = [c for c in features_numericas if c not in df_usuarios.columns] #esto es un freno de seguridad
     if faltantes:
         raise ValueError(f"Faltan columnas en df_usuarios: {faltantes}") #aviso por las dudas que faltan datos
-    df = df_usuarios[["_id"] + columnas_necesarias].copy() #aca me quedo solo con las columnas que me importan
+    df = df_usuarios[["_id"] + features_numericas].copy() #aca me quedo solo con las columnas que me importan
     df = df.dropna(
         subset=[
             c for c in features_numericas
@@ -38,24 +31,13 @@ def preparar_features(df_usuarios):
     df["metricas.tiempoHastaConversion"] = (
         df["metricas.tiempoHastaConversion"].fillna(-1)
     )
-    # Si is_mobile es null, se conserva al usuario como "desconocido".
-    df["is_mobile"] = df["is_mobile"].map({
-        True: "mobile",
-        False: "desktop"
-    }).fillna("desconocido") #transformamos mobile/desktop en categorico y conservamos los desconocidos
-    df_categorico = pd.get_dummies(
-        df[features_categoricas],
-        prefix=["dispositivo", "origen"]
-    ) #y aca chanto todo en onehot, para que el referrer no me crompa todo
-    X = pd.concat(
-        [
-            df[features_numericas].reset_index(drop=True),
-            df_categorico.reset_index(drop=True)
-        ],
-        axis=1
-    ) #aca pego todo en una sola tabla final
+    # Aplicamos logaritmo a las features con cola larga.
+    df["metricas.duracionPromedio"] = np.log1p(df["metricas.duracionPromedio"])
+    df["metricas.interaccionesPromedio"] = np.log1p(df["metricas.interaccionesPromedio"])
+    df["metricas.paginasPorSesionPromedio"] = np.log1p(df["metricas.paginasPorSesionPromedio"])
+    X = df[features_numericas].reset_index(drop=True)
     ids = df["_id"].reset_index(drop=True)
-    return X, ids #y aca devuelvo los onehoy con sus correspondientes ids
+    return X, ids #devuelvo las features con sus correspondientes ids
 
 def encontrar_k_optimo(X_escalado, k_min=2, k_max=5):
     mejor_k = k_min
@@ -70,30 +52,30 @@ def encontrar_k_optimo(X_escalado, k_min=2, k_max=5):
             mejor_k = k
     return mejor_k, resultados
 
-def kmeans(df_usuarios, k):
+def kmeans(df_usuarios, k=None, k_min=2, k_max=5):
     X, ids = preparar_features(df_usuarios) #preparamos las features
-
+    if len(X) < k_min:
+        raise ValueError(f"No hay suficientes usuarios con métricas ({len(X)}) para formar al menos {k_min} clusters")
     scaler = StandardScaler() #funcion de escalado de sklearn, sirve para que una sola feature no sea determinante
     X_escalado = scaler.fit_transform(X) #aca se escalan
-
+    k_max = min(k_max, len(X) - 1)
     if k is None:
         k, scores_por_k = encontrar_k_optimo(X_escalado, k_min, k_max)
     else:
         scores_por_k = None
-
-    if len(X) < k: #si las features son menores que los cluesteres
+    if len(X) < k: #si las features son menores que los clusters
         raise ValueError(f"No hay suficientes usuarios con métricas ({len(X)}) para formar {k} clusters")
-    
-    modelo = KMeans(n_clusters=k, random_state=42, n_init=10)# el k medias estandar de SKlearn
-    etiquetas = modelo.fit_predict(X_escalado)
-    
-    etiquetas = modelo.fit_predict(X_escalado) #y aca etiqueto 
+    modelo = KMeans(n_clusters=k, random_state=42, n_init=10) #el k medias estandar de SKlearn
+    etiquetas = modelo.fit_predict(X_escalado) #y aca etiqueto
+    silhouette = silhouette_score(X_escalado, etiquetas)
+    if silhouette <= 0.25:
+        return False
     asignaciones = [
         {"_id": id_, "cluster": int(cluster)}
         for id_, cluster in zip(ids, etiquetas)
     ] #esto si merece una explicacion mas detallada
-    #fit_predict me devuelve un array de numeros correspondiente a los clusteres de cada fila
-    # entonces con zip emparejo id con cluster segun etiquetas
+    #fit_predict me devuelve un array de numeros correspondiente a los clusteres
+    # entonces con zip emparejo id con su cluster segun etiquetas
     X_con_cluster = X.copy() #hago una copia, es para el siguiente paso
     X_con_cluster["cluster"] = etiquetas
     perfiles = {} #y aca de nuevo, explicacion
@@ -105,17 +87,16 @@ def kmeans(df_usuarios, k):
     #esta es la parte que me ordena todo para despues interpretar.
     #Los perfiles te dicen :
     # los que tienen mayor paginas por sesion, tienen mas tasa de conversion, y son el 70% y asi
-    
     #Imprimir perfiles
-    visualizar_clusters(X_escalado, etiquetas, nombres_columnas=X.columns)
-    
+    if(debug):
+        visualizar_clusters(X_escalado, etiquetas, nombres_columnas=X.columns)
     return {
         "asignaciones": asignaciones,
         "perfiles": perfiles,
         "k": k,
+        "silhouette": round(silhouette, 4),
         "scoresPorK": scores_por_k
     }
-
 
 #------------------------------------------------------FUNCION PARA VISUALIZACION
 def visualizar_clusters(X_escalado, etiquetas, nombres_columnas=None):
