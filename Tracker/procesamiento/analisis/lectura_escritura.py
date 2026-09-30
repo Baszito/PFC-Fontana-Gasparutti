@@ -34,6 +34,24 @@ print(f"Cantidad de registros: {len(df_usuarios)}")
 print(f"Cantidad de columnas: {len(df_usuarios.columns)}")
 
 # =========================
+# EXTRACCIÓN DE FORMULARIOS
+# =========================
+formularios = list(
+    db["formularios"].find({"Fin": {"$exists": True}})
+)
+
+df_formularios = pd.json_normalize(formularios)
+
+# ======================
+# EXTRACCIÓN DE EVENTOS
+# ======================
+eventos = list(
+    db["eventos"].find({"revisado": {"$exists": True}})
+)
+
+df_eventos = pd.json_normalize(eventos)
+
+# =========================
 # EXTRACCIÓN DE SESIONES
 # =========================
 filtro_sesiones = {
@@ -61,7 +79,7 @@ print(f"Cantidad de columnas: {len(df_sesiones.columns)}")
 # Pasamos a analisis
 # =========================
 
-patrones_secuenciales,clusters = analisis(df_usuarios,df_sesiones,soporte_secuencial)
+patrones_secuenciales,clusters = analisis(df_usuarios,df_sesiones, df_eventos, df_formularios, soporte_secuencial)
 
 
 # =========================
