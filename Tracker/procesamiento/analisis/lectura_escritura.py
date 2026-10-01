@@ -1,14 +1,25 @@
 from pymongo import MongoClient
 import pandas as pd
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from analisis import analisis as analisis
 
 # =========================
 # CONFIGURACIÓN
 # =========================
-soporte_secuencial = 0.05
+
+# Parametros de la DB
 MONGO_URI = "mongodb://localhost:27017"
 DB_NAME = "PruebaBBDD"
+ahora = datetime.now(timezone.utc)
+hace_30_dias = ahora - timedelta(days=30)
+
+# Parametros de los algoritmos 
+soporte_secuencial = 0.10
+long_secuencial = 3
+
+k_min = 2
+k_max = 5
+
 
 # =========================
 # CONEXIÓN
@@ -39,7 +50,8 @@ print(f"Cantidad de columnas: {len(df_usuarios.columns)}")
 filtro_sesiones = {
         "Fin": {"$exists": True},
         "revisado": {"$exists": True},
-        "analisis": {"$ne": True}
+        "analisis": {"$ne": True},
+        "inicio": {"$lte": hace_30_dias}
     }
 
 sesiones = list(
@@ -61,37 +73,37 @@ print(f"Cantidad de columnas: {len(df_sesiones.columns)}")
 # Pasamos a analisis
 # =========================
 
-patrones_secuenciales,clusters = analisis(df_usuarios,df_sesiones,soporte_secuencial)
+patrones_secuenciales,_ = analisis(df_usuarios,df_sesiones,soporte_secuencial,long_secuencial,k_min,k_max)
 
 
 # =========================
 # Escritura
 # =========================
 
-# for site_id, resultados in patrones_secuenciales.items():
-#         db.analisis_patrones_secuenciales.insert_one({
-#             "siteId": site_id,
-#             "fechaGeneracion": datetime.now(),
-#             "soporteMinimo": soporte_secuencial,
-#             "patrones": [{"soporte": s, "proporcion": pr, "secuencia": p} for s, pr, p in resultados]
-#         })
 
-#db.analisis_secuencial.insert_many(clusters)
-#db.analisis_asociacion.insert_many(asociaciones)
-#db.analisis_prediccion.insert_many(predicciones)
+# ========================= SECUENCIAL
 
-for site_id, resultado in clusters.items():
-    if resultado == False:
-        continue
-    db.analisis_clusters.insert_one({
-        "siteId": site_id,
-        "fechaGeneracion": datetime.now(),
-        "k": resultado["k"],
-        "silhouette": resultado["silhouette"],
-        "scoresPorK": resultado["scoresPorK"],
-        "asignaciones": resultado["asignaciones"],
-        "perfiles": resultado["perfiles"]
-    })
+for site_id, resultados in patrones_secuenciales.items():
+        db.analisis_patrones_secuenciales.insert_one({
+            "siteId": site_id,
+            "fechaGeneracion": datetime.now(),
+            "soporteMinimo": soporte_secuencial,
+            "patrones": [{"soporte": s, "proporcion": pr, "secuencia": p} for s, pr, p in resultados]
+        })
+
+
+# for site_id, resultado in clusters.items():
+#     if resultado == False:
+#         continue
+#     db.analisis_clusters.insert_one({
+#         "siteId": site_id,
+#         "fechaGeneracion": datetime.now(),
+#         "k": resultado["k"],
+#         "silhouette": resultado["silhouette"],
+#         "scoresPorK": resultado["scoresPorK"],
+#         "asignaciones": resultado["asignaciones"],
+#         "perfiles": resultado["perfiles"]
+#     })
 
 # =========================
 # FINALIZAR

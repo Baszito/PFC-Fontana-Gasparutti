@@ -19,7 +19,7 @@ def extraer_secuencia(sesion):
     secuencia = [normalizar_pagina(r["pagina"]) for r in rutas_ordenadas]
     return [p for i, p in enumerate(secuencia) if i == 0 or p != secuencia[i - 1]]   #y las normalizamos
 
-def prefix(sesiones, soporte_minimo=0.05, longitud_minima=3, top=10):
+def prefix(sesiones, soporte_minimo=0.05, longitud_minima=3, top=4):
     sesiones = sesiones.to_dict("records") 
     secuencias_por_sitio = defaultdict(list) #lista vacia en donde voy a ingresar los patrones
     for sesion in sesiones:

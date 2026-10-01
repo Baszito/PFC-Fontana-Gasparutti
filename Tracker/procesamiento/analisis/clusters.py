@@ -59,6 +59,9 @@ def encontrar_k_optimo(X_escalado, k_min=2, k_max=5):
     return mejor_k, resultados
 
 def kmeans(df_usuarios, k=None, k_min=2, k_max=5):
+    if df_usuarios.empty:
+        print("Este sitio no tiene usuarios !")
+        return False
     #-----------------------------------------------Preparacion previa
     X, ids = preparar_features(df_usuarios) #preparamos las features
     if len(X) < k_min:
