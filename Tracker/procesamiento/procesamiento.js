@@ -9,12 +9,8 @@ function condRevisado(fechaDesde) {
 }
 
 async function obtenerSitios(db) {
-  const [s1, s2, s3] = await Promise.all([
-    db.collection("sesiones").distinct("siteId"),
-    db.collection("eventos").distinct("metadata.siteId"),
-    db.collection("formularios").distinct("siteId")
-  ]);
-  return [...new Set([...s1, ...s2, ...s3])];
+  const sitios = await db.collection("sitios").find({}, { projection: { _id: 1 } }).toArray();
+  return sitios.map(s => s._id.toString());
 }
 
 async function obtenerFechaUltimoCalculo(db, siteId) {
@@ -573,6 +569,8 @@ async function procesarMetricas() {
   console.log("CRON PROCESAMIENTO: Conectado a MongoDB");
 
   const db = client.db("PruebaBBDD");
+  await db.collection("metricas_resumen").createIndex({ siteId: 1, fechaCalculo: -1 });
+
   const sitios = await obtenerSitios(db);
 
   for (const siteId of sitios) {
