@@ -47,7 +47,7 @@ function tieneCamposExtra(obj, permitidos) {
 // ---------- SESIONES ----------
 // ------------------------------
 
-const LIMITE_MINUTOS_SESION_QUIETA = 2;
+const LIMITE_MINUTOS_SESION_QUIETA = 1;
 
 async function limpiarSesiones(db) {
   //Trabajamos primero sobre la colección de sesiones
@@ -500,4 +500,4 @@ async function limpiarDatos() {
 }
 
 // Programación: cada 2 minutos
-cron.schedule('*/2 * * * *', limpiarDatos);
+cron.schedule('*/1 * * * *', limpiarDatos);

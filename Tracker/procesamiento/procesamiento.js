@@ -159,10 +159,10 @@ async function calcularTiempoCompletadoFormulario(db, siteId, fechaDesde) {
 // =================== MÉTRICAS DE SITIO =========================
 // ============================================================
 
-async function calcularUsuariosNuevosRecurrentes(db, siteId) {
+async function calcularUsuariosNuevosRecurrentes(db, siteId, fechaDesde) {
   const r = await db.collection("usuarios").aggregate([
     { $match: { siteId: siteId } },
-    { $group: { _id: null, usuariosNuevos: { $sum: { $cond: [{ $eq: ["$totalSesiones", 1] }, 1, 0] } }, usuariosRecurrentes: { $sum: { $cond: [{ $gt: ["$totalSesiones", 1] }, 1, 0] } } } }
+    { $group: { _id: null, usuariosNuevos: { $sum: { $cond: [{ $gt: ["$fechaInicio", fechaDesde] }, 1, 0] } }, usuariosRecurrentes: { $sum: { $cond: [{ $gt: ["$totalSesiones", 1] }, 1, 0] } } } }
   ]).toArray();
   return r[0] || { usuariosNuevos: 0, usuariosRecurrentes: 0 };
 }
@@ -347,7 +347,7 @@ async function construirDocumentoSitio(db, siteId, fechaDesde) {
     duracionSesion, conversion, dispositivoHabitual,
     totalSesiones, paginasHabituales, geoHabitual
   ] = await Promise.all([
-    calcularUsuariosNuevosRecurrentes(db, siteId),
+    calcularUsuariosNuevosRecurrentes(db, siteId, fechaDesde),
     calcularTotalUsuarios(db, siteId),
     calcularTasaRebote(db, siteId, fechaDesde),
     calcularPaginasPorSesion(db, siteId, fechaDesde),
@@ -585,7 +585,7 @@ async function procesarMetricas() {
   await client.close();
 }
 
-cron.schedule('*/10 * * * *', procesarMetricas);
+cron.schedule('*/6 * * * *', procesarMetricas);
 
 // Para pruebas manuales:
 // procesarMetricas();
