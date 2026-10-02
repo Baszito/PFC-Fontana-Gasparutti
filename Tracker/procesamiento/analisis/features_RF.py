@@ -11,7 +11,7 @@ def tiene_subtipo(eventos_clave, subtipos_buscados):
     return any(e.get("subtipo") in subtipos_buscados for e in eventos_clave)
 
 def contiene_subtipo_especifico(eventos_clave, subtipo):
-    if not isinstance(eventos_clave, subtipo):
+    if not isinstance(eventos_clave, list):
         return False
     return any(e.get("subtipo") == subtipo for e in eventos_clave)
 
@@ -22,14 +22,14 @@ def calcular_rage_clicks_por_sesion(df_eventos, ventana_segundos=1.5, min_clicks
     #La idea no es indicar cuantos bloques de Rage Clicks hubo
     #Acá la idea es devolver un diccionario con ID de sesión y un valor booleano que indique si hubo rage clicks o no
     #Justamente porque a los árboles de decisión solo le sirven valores booleanos
-    df_clicks = df_eventos[df_eventos["metadata"].apply(lambda m: m.get("tipo") == "click")].copy()
+    df_clicks = df_eventos[df_eventos["metadata.tipo"] == "click"].copy()
     
     if df_clicks.empty:
         return {}
     
-    df_clicks["siteId"] = df_clicks["metadata"].apply(lambda m: m.get("siteId"))
-    df_clicks["sessionId"] = df_clicks["metadata"].apply(lambda m: m.get("sessionId"))
-    df_clicks["elemento"] = df_clicks["metadata"].apply(lambda m: m.get("elemento"))
+    df_clicks["siteId"] = df_clicks["metadata.siteId"]
+    df_clicks["sessionId"] = df_clicks["metadata.sessionId"]
+    df_clicks["elemento"] = df_clicks["metadata.elemento"]
     df_clicks["timestamp"] = pd.to_datetime(df_clicks["timestamp"])
     
     resultado = {}

@@ -39,7 +39,7 @@ def calcular_A_priori(transacciones, min_support=0.05, min_confidence=0.5):
     te_ary = te.fit(transacciones).transform(transacciones)
     df_encoded = pd.DataFrame(te_ary, columns=te.columns_)
     
-    itemsets = apriori(df_encoded, min_support=min_support, use_columns=True)
+    itemsets = apriori(df_encoded, min_support=min_support, use_colnames=True)
     #Resultado: Una tabla con dos columnas.
     #Las filas corresponden a cada "patron identificado"
     #Las columnas son: itemsets -> frozenset({'elemento1', 'elemento2', ...}) correspondientes a los elementos pertenecientes al patron detectado

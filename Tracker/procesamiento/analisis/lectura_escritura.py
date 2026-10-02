@@ -68,12 +68,37 @@ print("\n=== SESIONES ===")
 print(f"Cantidad de registros: {len(df_sesiones)}")
 print(f"Cantidad de columnas: {len(df_sesiones.columns)}")
 
+# =========================
+# EXTRACCIÓN DE EVENTOS
+# =========================
+eventos = list(
+    db["eventos"].find()
+)
+
+df_eventos = pd.json_normalize(eventos)
+
+print("\n=== EVENTOS ===")
+print(f"Cantidad de registros: {len(df_eventos)}")
+print(f"Cantidad de columnas: {len(df_eventos.columns)}")
+
+# =========================
+# EXTRACCIÓN DE FORMULARIOS
+# =========================
+formularios = list(
+    db["formularios"].find()
+)
+
+df_formularios = pd.json_normalize(formularios)
+
+print("\n=== FORMULARIOS ===")
+print(f"Cantidad de registros: {len(df_formularios)}")
+print(f"Cantidad de columnas: {len(df_formularios.columns)}")
 
 # =========================
 # Pasamos a analisis
 # =========================
 
-patrones_secuenciales, clusters = analisis(df_usuarios,df_sesiones,soporte_secuencial,long_secuencial,k_min,k_max)
+patrones_secuenciales, clusters, asociaciones, random_forests = analisis(df_usuarios, df_sesiones, df_eventos, df_formularios, soporte_secuencial,long_secuencial,k_min,k_max)
 
 
 # =========================
@@ -83,27 +108,27 @@ patrones_secuenciales, clusters = analisis(df_usuarios,df_sesiones,soporte_secue
 
 # ========================= SECUENCIAL
 
-for site_id, resultados in patrones_secuenciales.items():
-        db.analisis_patrones_secuenciales.insert_one({
-            "siteId": site_id,
-            "fechaGeneracion": datetime.now(),
-            "soporteMinimo": soporte_secuencial,
-            "patrones": [{"soporte": s, "proporcion": pr, "secuencia": p} for s, pr, p in resultados]
-        })
+# for site_id, resultados in patrones_secuenciales.items():
+#         db.analisis_patrones_secuenciales.insert_one({
+#             "siteId": site_id,
+#             "fechaGeneracion": datetime.now(),
+#             "soporteMinimo": soporte_secuencial,
+#             "patrones": [{"soporte": s, "proporcion": pr, "secuencia": p} for s, pr, p in resultados]
+#         })
 
 
-for site_id, resultado in clusters.items():
-    if resultado == False:
-        continue
-    db.analisis_clusters.insert_one({
-        "siteId": site_id,
-        "fechaGeneracion": datetime.now(),
-        "k": resultado["k"],
-        "silhouette": resultado["silhouette"],
-        "scoresPorK": resultado["scoresPorK"],
-        "asignaciones": resultado["asignaciones"],
-        "perfiles": resultado["perfiles"]
-    })
+# for site_id, resultado in clusters.items():
+#     if resultado == False:
+#         continue
+#     db.analisis_clusters.insert_one({
+#         "siteId": site_id,
+#         "fechaGeneracion": datetime.now(),
+#         "k": resultado["k"],
+#         "silhouette": resultado["silhouette"],
+#         "scoresPorK": resultado["scoresPorK"],
+#         "asignaciones": resultado["asignaciones"],
+#         "perfiles": resultado["perfiles"]
+#     })
 
 # =========================
 # FINALIZAR

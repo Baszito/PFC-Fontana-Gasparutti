@@ -89,13 +89,13 @@ def arboles_decision(df_sesiones, df_eventos, df_formularios, df_usuarios):
     datasets = DDBB_RF(df_sesiones, df_eventos, df_formularios, df_usuarios)
     
     modelo_conversion, reporte_conversion = entrenar_modelo_conversion(datasets["conversion"])
-    modelo_abandono_carrito, reporte_abandono_carrito = entrenar_modelo_abandono_carrito(datasets["abandono_carrito"])
+    #modelo_abandono_carrito, reporte_abandono_carrito = entrenar_modelo_abandono_carrito(datasets["abandono_carrito"])
     modelo_abandono_formulario, reporte_abandono_formulario = entrenar_modelo_abandono_formulario(datasets["abandono_formulario"])
     modelo_recurrencia, reporte_recurrencia = entrenar_modelo_recurrencia_usuarios(datasets["recurrencia_usuario"])
     
     return {
         "conversion": reporte_conversion,
-        "abandono_carrito": reporte_abandono_carrito,
+        #"abandono_carrito": reporte_abandono_carrito,
         "abandono_formulario": reporte_abandono_formulario,
         "recurrencia_usuario": reporte_recurrencia
     }
