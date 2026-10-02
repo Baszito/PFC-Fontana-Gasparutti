@@ -50,8 +50,8 @@ print(f"Cantidad de columnas: {len(df_usuarios.columns)}")
 filtro_sesiones = {
         "Fin": {"$exists": True},
         "revisado": {"$exists": True},
-        "analisis": {"$ne": True},
-        "inicio": {"$lte": hace_30_dias}
+        "analisis": {"$ne": True}#,
+        #"inicio": {"$lte": hace_30_dias}
     }
 
 sesiones = list(
@@ -73,7 +73,7 @@ print(f"Cantidad de columnas: {len(df_sesiones.columns)}")
 # Pasamos a analisis
 # =========================
 
-patrones_secuenciales,_ = analisis(df_usuarios,df_sesiones,soporte_secuencial,long_secuencial,k_min,k_max)
+patrones_secuenciales, clusters = analisis(df_usuarios,df_sesiones,soporte_secuencial,long_secuencial,k_min,k_max)
 
 
 # =========================
@@ -92,18 +92,18 @@ for site_id, resultados in patrones_secuenciales.items():
         })
 
 
-# for site_id, resultado in clusters.items():
-#     if resultado == False:
-#         continue
-#     db.analisis_clusters.insert_one({
-#         "siteId": site_id,
-#         "fechaGeneracion": datetime.now(),
-#         "k": resultado["k"],
-#         "silhouette": resultado["silhouette"],
-#         "scoresPorK": resultado["scoresPorK"],
-#         "asignaciones": resultado["asignaciones"],
-#         "perfiles": resultado["perfiles"]
-#     })
+for site_id, resultado in clusters.items():
+    if resultado == False:
+        continue
+    db.analisis_clusters.insert_one({
+        "siteId": site_id,
+        "fechaGeneracion": datetime.now(),
+        "k": resultado["k"],
+        "silhouette": resultado["silhouette"],
+        "scoresPorK": resultado["scoresPorK"],
+        "asignaciones": resultado["asignaciones"],
+        "perfiles": resultado["perfiles"]
+    })
 
 # =========================
 # FINALIZAR
