@@ -102,6 +102,8 @@ def preparar_dataset_abandono_carrito(df_features_sesion):
     #no tiene logica abandonarlo si nunca pusiste nada ahí
     df["agrego_carrito"] = df["eventosClave"].apply(
         lambda ev: contiene_subtipo_especifico(ev, "añadir_carrito")
+        #Mamita, como patiné acá con los datos.
+        #"agregar_carrito" es como va a figurar en el futuro, pero ahora, por los datos sintéticos, uso "añadir_carrito"
     )
     df = df[df["agrego_carrito"]].copy()
     
@@ -120,9 +122,7 @@ def preparar_dataset_abandono_carrito(df_features_sesion):
 def preparar_dataset_abandono_formulario(df_formularios, df_features_sesion):
     df_form = df_formularios.copy()
     df_form["clave_sesion"] = df_form["siteId"] + "_" + df_form["sessionId"]
-    df_form["cantidad_campos_interactuados"] = df_form["camposInteractuados"].apply(
-        lambda c: len(c) if isinstance(c, list) else 0
-    )
+    
     df = df_form.merge(
         df_features_sesion[["clave_sesion", "is_mobile", "referrer", "cantidad_paginas", "rage_click", "duracionSesion"]],
         on="clave_sesion",
@@ -134,7 +134,7 @@ def preparar_dataset_abandono_formulario(df_formularios, df_features_sesion):
     
     return df[[
         "clave_sesion", "is_mobile", "referrer", "cantidad_paginas",
-        "rage_click", "duracionSesion", "cantidad_campos_interactuados",
+        "rage_click", "duracionSesion",
         "abandono_formulario"
     ]].rename(columns={"abandono_formulario": "target"})
     

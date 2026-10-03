@@ -105,7 +105,35 @@ patrones_secuenciales, clusters, asociaciones, random_forests = analisis(df_usua
 # Escritura
 # =========================
 
+print("\n=== RESULTADOS ===")
+print("\n=== random forests ===")
 
+for nombre_modelo, (reporte) in random_forests.items():
+    print(f"\n=== {nombre_modelo} ===")
+    print(f"Accuracy: {reporte['accuracy']}")
+    print("\nMatriz de confusión:")
+    print(reporte['matriz_confusion'])
+    print("\nImportancia de features:")
+    for feature, importancia in reporte['importancia_features'].items():
+        print(f"  {feature}: {round(importancia, 4)}")
+    print("\nReporte de clasificación (precision/recall/f1 por clase):")
+    for clase, metricas in reporte['reporte_clasificacion'].items():
+        if isinstance(metricas, dict):
+            print(f"  {clase}: {metricas}")
+
+print("\n=== asociaciones ===")
+resultado_apriori = asociaciones 
+
+for clave in ["apriori_rutas", "apriori_eventosClave"]:
+    print(f"\n=== {clave} ===")
+
+    print("\nItemsets frecuentes:")
+    df_itemsets = pd.DataFrame(resultado_apriori[clave]["itemsets_frecuentes"])
+    print(df_itemsets.sort_values("soporte", ascending=False))
+
+    print("\nReglas de asociación:")
+    df_reglas = pd.DataFrame(resultado_apriori[clave]["reglas"])
+    print(df_reglas.sort_values("confianza", ascending=False))
 # ========================= SECUENCIAL
 
 # for site_id, resultados in patrones_secuenciales.items():
