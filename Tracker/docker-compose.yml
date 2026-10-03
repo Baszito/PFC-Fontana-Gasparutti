@@ -49,5 +49,12 @@ services:
       - mongo
       - preprocesamiento
 
+  analisis:
+    build: ./procesamiento
+    command: ["python3", "analisis/lectura_escritura.py"]
+    depends_on:
+      - mongo
+      - preprocesamiento
+      - procesamiento
 volumes:
   db:

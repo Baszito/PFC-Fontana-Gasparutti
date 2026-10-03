@@ -52,7 +52,7 @@ def encontrar_k_optimo(X_escalado, k_min=2, k_max=5):
     for k in range(k_min, k_max + 1):
         modelo = KMeans(n_clusters=k, random_state=42, n_init=10).fit(X_escalado)
         score = silhouette_score(X_escalado, modelo.labels_)
-        resultados[k] = round(score, 4)
+        resultados[str(k)] = round(score, 4)
         if score > mejor_score:
             mejor_score = score
             mejor_k = k
@@ -96,7 +96,7 @@ def kmeans(df_usuarios, k=None, k_min=2, k_max=5):
     X_con_cluster["cluster"] = etiquetas
     perfiles = {} #y aca de nuevo, explicacion
     for cluster_id, grupo in X_con_cluster.groupby("cluster"):
-        perfiles[int(cluster_id)] = {
+        perfiles[str(cluster_id)] = {
             "cantidadUsuarios": int(len(grupo)),
             "promedios": grupo[features_numericas].mean().round(3).to_dict()
         }

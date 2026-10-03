@@ -2,13 +2,14 @@ from pymongo import MongoClient
 import pandas as pd
 from datetime import datetime, timedelta, timezone
 from analisis import analisis as analisis
+from crontab import CronTab
 
 # =========================
 # CONFIGURACIÓN
 # =========================
 
 # Parametros de la DB
-MONGO_URI = "mongodb://localhost:27017"
+MONGO_URI = "mongodb://mongo:27017"
 DB_NAME = "PruebaBBDD"
 ahora = datetime.now(timezone.utc)
 hace_30_dias = ahora - timedelta(days=30)
@@ -60,7 +61,6 @@ sesiones = list(
 
 if not sesiones:
     print("Sin sesiones nuevas para analizar")
-    client.close()
 
 df_sesiones = pd.json_normalize(sesiones)
 
@@ -145,18 +145,20 @@ for clave in ["apriori_rutas", "apriori_eventosClave"]:
 #         })
 
 
-# for site_id, resultado in clusters.items():
-#     if resultado == False:
-#         continue
-#     db.analisis_clusters.insert_one({
-#         "siteId": site_id,
-#         "fechaGeneracion": datetime.now(),
-#         "k": resultado["k"],
-#         "silhouette": resultado["silhouette"],
-#         "scoresPorK": resultado["scoresPorK"],
-#         "asignaciones": resultado["asignaciones"],
-#         "perfiles": resultado["perfiles"]
-#     })
+for site_id, resultado in clusters.items():
+    # Si el sitio devolvió False o None (ej. no hubo suficientes usuarios o bajo silhouette)
+    if not resultado:
+        print(f"Saltando escritura de clusters para el sitio {site_id} (sin resultados válidos)")
+        continue
+    db.analisis_clusters.insert_one({
+        "siteId": site_id,
+        "fechaGeneracion": datetime.now(timezone.utc),
+        "k": resultado["k"],
+        "silhouette": resultado["silhouette"],
+        "scoresPorK": resultado["scoresPorK"],
+        "asignaciones": resultado["asignaciones"],
+        "perfiles": resultado["perfiles"]
+    })
 
 # =========================
 # FINALIZAR

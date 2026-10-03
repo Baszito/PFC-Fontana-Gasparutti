@@ -1,17 +1,22 @@
-# Imagen base: Node.js versión 20
 FROM node:20
 
-# Carpeta de trabajo dentro del contenedor
 WORKDIR /app
 
-# Copio primero solo los archivos de dependencias
+RUN apt-get update && apt-get install -y python3 python3-pip && rm -rf /var/lib/apt/lists/*
+
 COPY package*.json ./
 
-# Instalo las dependencias (express, cors, etc.)
 RUN npm install
 
-# Recién ahora copio el resto del código
 COPY . .
 
-# Comando que se ejecuta al arrancar el contenedor
+RUN pip3 install --no-cache-dir --break-system-packages \
+    pymongo \
+    pandas \
+    numpy \
+    scikit-learn \
+    matplotlib \
+    prefixspan \
+    crontab
+
 CMD ["node", "preprocesamiento.js"]
