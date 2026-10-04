@@ -9,7 +9,7 @@ from crontab import CronTab
 # =========================
 
 # Parametros de la DB
-MONGO_URI = "mongodb://mongo:27017"
+MONGO_URI = "mongodb://localhost:27017"
 DB_NAME = "PruebaBBDD"
 ahora = datetime.now(timezone.utc)
 hace_30_dias = ahora - timedelta(days=30)
@@ -112,7 +112,7 @@ def guardar_resultados_apriori(db, asociaciones):
         for site_id, resultado in asociaciones.items()
     ]
     if docs:
-        db["analiticas_apriori"].insert_many(docs)
+        db["analisis_apriori"].insert_many(docs)
     print(f"Apriori: {len(docs)} documento(s) insertado(s)")
 
 
@@ -135,7 +135,7 @@ def guardar_resultados_random_forest(db, random_forests):
             docs.append({"siteId": site_id, "fechaCalculo": ahora, "modelos": modelos})
 
     if docs:
-        db["analiticas_random_forest"].insert_many(docs)
+        db["analisis_random_forest"].insert_many(docs)
     print(f"Random Forest: {len(docs)} documento(s) insertado(s)")
 
 #Guardo los datos:
@@ -145,29 +145,29 @@ guardar_resultados_random_forest(db, random_forests)
 
 # ========================= SECUENCIAL
 
-# for site_id, resultados in patrones_secuenciales.items():
-#         db.analisis_patrones_secuenciales.insert_one({
-#             "siteId": site_id,
-#             "fechaGeneracion": datetime.now(),
-#             "soporteMinimo": soporte_secuencial,
-#             "patrones": [{"soporte": s, "proporcion": pr, "secuencia": p} for s, pr, p in resultados]
-#         })
+for site_id, resultados in patrones_secuenciales.items():
+        db.analisis_patrones_secuenciales.insert_one({
+            "siteId": site_id,
+            "fechaGeneracion": datetime.now(),
+            "soporteMinimo": soporte_secuencial,
+            "patrones": [{"soporte": s, "proporcion": pr, "secuencia": p} for s, pr, p in resultados]
+        })
 
 
-# for site_id, resultado in clusters.items():
-#     # Si el sitio devolvió False o None (ej. no hubo suficientes usuarios o bajo silhouette)
-#     if not resultado:
-#         print(f"Saltando escritura de clusters para el sitio {site_id} (sin resultados válidos)")
-#         continue
-#     db.analisis_clusters.insert_one({
-#         "siteId": site_id,
-#         "fechaGeneracion": datetime.now(timezone.utc),
-#         "k": resultado["k"],
-#         "silhouette": resultado["silhouette"],
-#         "scoresPorK": resultado["scoresPorK"],
-#         "asignaciones": resultado["asignaciones"],
-#         "perfiles": resultado["perfiles"]
-#     })
+for site_id, resultado in clusters.items():
+    # Si el sitio devolvió False o None (ej. no hubo suficientes usuarios o bajo silhouette)
+    if not resultado:
+        print(f"Saltando escritura de clusters para el sitio {site_id} (sin resultados válidos)")
+        continue
+    db.analisis_clusters.insert_one({
+        "siteId": site_id,
+        "fechaGeneracion": datetime.now(timezone.utc),
+        "k": resultado["k"],
+        "silhouette": resultado["silhouette"],
+        "scoresPorK": resultado["scoresPorK"],
+        "asignaciones": resultado["asignaciones"],
+        "perfiles": resultado["perfiles"]
+    })
 
 # =========================
 # FINALIZAR

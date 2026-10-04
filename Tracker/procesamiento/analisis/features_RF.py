@@ -22,10 +22,10 @@ def calcular_rage_clicks_por_sesion(df_eventos, ventana_segundos=1.5, min_clicks
     #La idea no es indicar cuantos bloques de Rage Clicks hubo
     #Acá la idea es devolver un diccionario con ID de sesión y un valor booleano que indique si hubo rage clicks o no
     #Justamente porque a los árboles de decisión solo le sirven valores booleanos
-    df_clicks = df_eventos[df_eventos["metadata.tipo"] == "click"].copy()
-    
-    if df_clicks.empty:
+    if df_eventos.empty or "metadata.tipo" not in df_eventos.columns:
         return {}
+
+    df_clicks = df_eventos[df_eventos["metadata.tipo"] == "click"].copy()
     
     df_clicks["siteId"] = df_clicks["metadata.siteId"]
     df_clicks["sessionId"] = df_clicks["metadata.sessionId"]
@@ -120,28 +120,37 @@ def preparar_dataset_abandono_carrito(df_features_sesion):
 #- DataSet para el abandono de formulario --
 #-------------------------------------------
 def preparar_dataset_abandono_formulario(df_formularios, df_features_sesion):
+    columnas_esperadas = ["clave_sesion", "is_mobile", "referrer", "cantidad_paginas", "rage_click", "duracionSesion", "target"]
+
+    if df_formularios.empty or "siteId" not in df_formularios.columns or "sessionId" not in df_formularios.columns:
+        return pd.DataFrame(columns=columnas_esperadas)
+
     df_form = df_formularios.copy()
     df_form["clave_sesion"] = df_form["siteId"] + "_" + df_form["sessionId"]
-    
+
     df = df_form.merge(
         df_features_sesion[["clave_sesion", "is_mobile", "referrer", "cantidad_paginas", "rage_click", "duracionSesion"]],
         on="clave_sesion",
-        how="inner" # descarta formularios cuya sesión no se encuentre
+        how="inner"
     )
-    
+
     df = df.dropna(subset=["duracionSesion"])
     df["abandono_formulario"] = ~df["completado"]
-    
+
     return df[[
         "clave_sesion", "is_mobile", "referrer", "cantidad_paginas",
-        "rage_click", "duracionSesion",
-        "abandono_formulario"
+        "rage_click", "duracionSesion", "abandono_formulario"
     ]].rename(columns={"abandono_formulario": "target"})
     
 #-------------------------------------------------
 #- DataSet para modelo de recurrencia de usuario - 
 #-------------------------------------------------
 def preparar_dataset_recurrencia_usuario(df_usuarios, df_features_sesion):
+    columnas_esperadas = ["clave_usuario", "is_mobile", "referrerOriginal", "duracionSesion", "cantidad_paginas", "target"]
+
+    if df_usuarios.empty or "siteId" not in df_usuarios.columns or "userId" not in df_usuarios.columns:
+        return pd.DataFrame(columns=columnas_esperadas)
+
     primera_sesion = (
         df_features_sesion
         .dropna(subset=["duracionSesion"])
@@ -150,27 +159,36 @@ def preparar_dataset_recurrencia_usuario(df_usuarios, df_features_sesion):
         .first()
         .reset_index()
     )
-    
+
     df_usuarios_copia = df_usuarios.copy()
     df_usuarios_copia["clave_usuario"] = df_usuarios_copia["siteId"] + "_" + df_usuarios_copia["userId"]
     primera_sesion["clave_usuario"] = primera_sesion["siteId"] + "_" + primera_sesion["userId"]
-    
+
     df = primera_sesion.merge(
         df_usuarios_copia[["clave_usuario", "totalSesiones"]],
         on="clave_usuario",
         how="inner"
     )
-    
+
     df["es_recurrente"] = df["totalSesiones"] > 1
-    
+
     return df[[
         "clave_usuario", "is_mobile", "referrer", "duracionSesion",
         "cantidad_paginas", "es_recurrente"
     ]].rename(columns={"referrer": "referrerOriginal", "es_recurrente": "target"})
 
 def DDBB_RF(df_sesiones, df_eventos, df_formularios, df_usuarios):
+    if df_sesiones.empty or "siteId" not in df_sesiones.columns:
+        vacio = {
+            "conversion": ["clave_sesion", "is_mobile", "referrer", "cantidad_paginas", "rage_click", "duracionSesion", "target"],
+            "abandono_carrito": ["clave_sesion", "is_mobile", "referrer", "cantidad_paginas", "rage_click", "duracionSesion", "target"],
+            "abandono_formulario": ["clave_sesion", "is_mobile", "referrer", "cantidad_paginas", "rage_click", "duracionSesion", "target"],
+            "recurrencia_usuario": ["clave_usuario", "is_mobile", "referrerOriginal", "duracionSesion", "cantidad_paginas", "target"]
+        }
+        return {k: pd.DataFrame(columns=v) for k, v in vacio.items()}
+
     df_features_sesion = preparar_feature_sesion(df_sesiones, df_eventos)
-    
+
     return {
         "conversion": preparar_dataset_conversion(df_features_sesion),
         "abandono_carrito": preparar_dataset_abandono_carrito(df_features_sesion),

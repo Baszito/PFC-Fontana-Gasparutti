@@ -189,17 +189,22 @@ def arboles_decision(df_sesiones, df_eventos, df_formularios, df_usuarios):
 def RF(df_sesiones, df_eventos, df_formularios, df_usuarios):
     col_site_eventos = "metadata.siteId" if "metadata.siteId" in df_eventos.columns else "siteId"
 
-    sitios = sorted(
-        set(df_sesiones["siteId"].dropna()) | set(df_usuarios["siteId"].dropna())
-    )
+    def obtener_siteids(df, columna="siteId"):
+        if columna not in df.columns:
+            return set()
+        return set(df[columna].dropna())
+
+    sitios = sorted(obtener_siteids(df_sesiones) | obtener_siteids(df_usuarios))
 
     resultados_por_sitio = {}
 
+    col_site_eventos = "metadata.siteId" if "metadata.siteId" in df_eventos.columns else None
+
     for site_id in sitios:
-        df_sesiones_site = df_sesiones[df_sesiones["siteId"] == site_id].reset_index(drop=True)
-        df_usuarios_site = df_usuarios[df_usuarios["siteId"] == site_id].reset_index(drop=True)
-        df_eventos_site = df_eventos[df_eventos[col_site_eventos] == site_id].reset_index(drop=True)
-        df_formularios_site = df_formularios[df_formularios["siteId"] == site_id].reset_index(drop=True)
+        df_sesiones_site = df_sesiones[df_sesiones["siteId"] == site_id].reset_index(drop=True) if "siteId" in df_sesiones.columns else df_sesiones.iloc[0:0]
+        df_usuarios_site = df_usuarios[df_usuarios["siteId"] == site_id].reset_index(drop=True) if "siteId" in df_usuarios.columns else df_usuarios.iloc[0:0]
+        df_eventos_site = df_eventos[df_eventos[col_site_eventos] == site_id].reset_index(drop=True) if col_site_eventos else df_eventos.iloc[0:0]
+        df_formularios_site = df_formularios[df_formularios["siteId"] == site_id].reset_index(drop=True) if "siteId" in df_formularios.columns else df_formularios.iloc[0:0]
 
         try:
             resultados_por_sitio[site_id] = arboles_decision(

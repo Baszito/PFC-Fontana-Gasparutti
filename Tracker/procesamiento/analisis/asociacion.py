@@ -25,7 +25,7 @@ def extraer_transacciones_eventos(df_sesiones):
             transacciones.append(list(subtipos_unicos))
     return transacciones
 
-def calcular_A_priori(transacciones, min_support=0.05, min_confidence=0.5):
+def calcular_A_priori(transacciones, min_support=0.05, min_confidence=0.5, min_items_itemset=2, min_lift=2.0):
     if len(transacciones) == 0:
         return {"itemsets_frecuentes": [], "reglas": []}
     
@@ -62,6 +62,7 @@ def calcular_A_priori(transacciones, min_support=0.05, min_confidence=0.5):
     itemsets_out = [
         {"items": list(row["itemsets"]), "soporte": round(row["support"], 4)}
         for _, row in itemsets.iterrows()
+        if len(row["itemsets"]) >= min_items_itemset
     ]
     
     reglas_out = [
@@ -73,12 +74,13 @@ def calcular_A_priori(transacciones, min_support=0.05, min_confidence=0.5):
             "lift": round(row["lift"], 4)
         }
         for _, row in reglas.iterrows()
+        if row["lift"] >= min_lift
     ]
     
     return {"itemsets_frecuentes": itemsets_out, "reglas": reglas_out}
 
 
-def reglas_asociacion(df_sesiones, min_support=0.05, min_confidence=0.5):
+def reglas_asociacion(df_sesiones, min_support=0.05, min_confidence=0.5, min_items_itemset=2, min_lift=1.0):
     resultados_por_sitio = {}
 
     for site_id in sorted(df_sesiones["siteId"].dropna().unique()):
@@ -88,8 +90,8 @@ def reglas_asociacion(df_sesiones, min_support=0.05, min_confidence=0.5):
         transacciones_eventos = extraer_transacciones_eventos(df_site)
 
         resultados_por_sitio[site_id] = {
-            "apriori_rutas": calcular_A_priori(transacciones_rutas, min_support, min_confidence),
-            "apriori_eventosClave": calcular_A_priori(transacciones_eventos, min_support, min_confidence)
+            "apriori_rutas": calcular_A_priori(transacciones_rutas, min_support, min_confidence, min_items_itemset, min_lift),
+            "apriori_eventosClave": calcular_A_priori(transacciones_eventos, min_support, min_confidence, min_items_itemset, min_lift)
         }
 
     return resultados_por_sitio
