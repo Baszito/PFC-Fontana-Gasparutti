@@ -70,7 +70,7 @@ def preparar_feature_sesion(df_sesiones, df_eventos):
     df["clave_sesion"] = df["siteId"] + "_" + df["sessionId"]
     
     df["cantidad_paginas"] = df["rutas"].apply(lambda r: len(r) if isinstance(r, list) else 0)
-    df["rage_click"] = df["clave_sesion"].map(rage_clicks_dict).fillna(False)
+    df["rage_click"] = df["clave_sesion"].map(rage_clicks_dict).fillna(False).astype(bool)
     df["convirtio"] = df["eventosClave"].apply(lambda ev: tiene_subtipo(ev, SUBTIPOS_CONVERSION))
     df["referrer"] = df["referrer"].fillna("desconocido")
     
@@ -165,7 +165,7 @@ def preparar_dataset_recurrencia_usuario(df_usuarios, df_features_sesion):
     
     return df[[
         "clave_usuario", "is_mobile", "referrer", "duracionSesion",
-        "cantidad_paginas", "convirtio", "es_recurrente"
+        "cantidad_paginas", "es_recurrente"
     ]].rename(columns={"referrer": "referrerOriginal", "es_recurrente": "target"})
 
 def DDBB_RF(df_sesiones, df_eventos, df_formularios, df_usuarios):

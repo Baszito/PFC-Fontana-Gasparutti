@@ -78,14 +78,18 @@ def calcular_A_priori(transacciones, min_support=0.05, min_confidence=0.5):
     return {"itemsets_frecuentes": itemsets_out, "reglas": reglas_out}
 
 
-def reglas_asociacion(df_sesiones):
-    transacciones_rutas = extraer_transacciones_rutas(df_sesiones)
-    transacciones_eventos = extraer_transacciones_eventos(df_sesiones)
-    
-    resultado_rutas = calcular_A_priori(transacciones_rutas)
-    resultado_eventos = calcular_A_priori(transacciones_eventos)
-    
-    return {
-        "apriori_rutas": resultado_rutas,
-        "apriori_eventosClave": resultado_eventos
-    }
+def reglas_asociacion(df_sesiones, min_support=0.05, min_confidence=0.5):
+    resultados_por_sitio = {}
+
+    for site_id in sorted(df_sesiones["siteId"].dropna().unique()):
+        df_site = df_sesiones[df_sesiones["siteId"] == site_id]
+
+        transacciones_rutas = extraer_transacciones_rutas(df_site)
+        transacciones_eventos = extraer_transacciones_eventos(df_site)
+
+        resultados_por_sitio[site_id] = {
+            "apriori_rutas": calcular_A_priori(transacciones_rutas, min_support, min_confidence),
+            "apriori_eventosClave": calcular_A_priori(transacciones_eventos, min_support, min_confidence)
+        }
+
+    return resultados_por_sitio

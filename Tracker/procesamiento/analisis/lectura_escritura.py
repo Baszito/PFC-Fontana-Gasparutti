@@ -105,35 +105,44 @@ patrones_secuenciales, clusters, asociaciones, random_forests = analisis(df_usua
 # Escritura
 # =========================
 
-print("\n=== RESULTADOS ===")
-print("\n=== random forests ===")
+def guardar_resultados_apriori(db, asociaciones):
+    ahora = datetime.now()
+    docs = [
+        {"siteId": site_id, "fechaCalculo": ahora, **resultado}
+        for site_id, resultado in asociaciones.items()
+    ]
+    if docs:
+        db["analiticas_apriori"].insert_many(docs)
+    print(f"Apriori: {len(docs)} documento(s) insertado(s)")
 
-for nombre_modelo, (reporte) in random_forests.items():
-    print(f"\n=== {nombre_modelo} ===")
-    print(f"Accuracy: {reporte['accuracy']}")
-    print("\nMatriz de confusión:")
-    print(reporte['matriz_confusion'])
-    print("\nImportancia de features:")
-    for feature, importancia in reporte['importancia_features'].items():
-        print(f"  {feature}: {round(importancia, 4)}")
-    print("\nReporte de clasificación (precision/recall/f1 por clase):")
-    for clase, metricas in reporte['reporte_clasificacion'].items():
-        if isinstance(metricas, dict):
-            print(f"  {clase}: {metricas}")
 
-print("\n=== asociaciones ===")
-resultado_apriori = asociaciones 
+def guardar_resultados_random_forest(db, random_forests):
+    ahora = datetime.now()
+    docs = []
 
-for clave in ["apriori_rutas", "apriori_eventosClave"]:
-    print(f"\n=== {clave} ===")
+    for site_id, resultado in random_forests.items():
+        if resultado is None:
+            continue
 
-    print("\nItemsets frecuentes:")
-    df_itemsets = pd.DataFrame(resultado_apriori[clave]["itemsets_frecuentes"])
-    print(df_itemsets.sort_values("soporte", ascending=False))
+        modelos = {}
+        for nombre_modelo, valor in resultado.items():
+            if valor is None:
+                continue
+            modelo, reporte = valor
+            modelos[nombre_modelo] = reporte
 
-    print("\nReglas de asociación:")
-    df_reglas = pd.DataFrame(resultado_apriori[clave]["reglas"])
-    print(df_reglas.sort_values("confianza", ascending=False))
+        if modelos:  # solo guardamos el sitio si al menos un modelo entrenó bien
+            docs.append({"siteId": site_id, "fechaCalculo": ahora, "modelos": modelos})
+
+    if docs:
+        db["analiticas_random_forest"].insert_many(docs)
+    print(f"Random Forest: {len(docs)} documento(s) insertado(s)")
+
+#Guardo los datos:
+guardar_resultados_apriori(db, asociaciones)
+guardar_resultados_random_forest(db, random_forests)
+
+
 # ========================= SECUENCIAL
 
 # for site_id, resultados in patrones_secuenciales.items():
@@ -145,20 +154,20 @@ for clave in ["apriori_rutas", "apriori_eventosClave"]:
 #         })
 
 
-for site_id, resultado in clusters.items():
-    # Si el sitio devolvió False o None (ej. no hubo suficientes usuarios o bajo silhouette)
-    if not resultado:
-        print(f"Saltando escritura de clusters para el sitio {site_id} (sin resultados válidos)")
-        continue
-    db.analisis_clusters.insert_one({
-        "siteId": site_id,
-        "fechaGeneracion": datetime.now(timezone.utc),
-        "k": resultado["k"],
-        "silhouette": resultado["silhouette"],
-        "scoresPorK": resultado["scoresPorK"],
-        "asignaciones": resultado["asignaciones"],
-        "perfiles": resultado["perfiles"]
-    })
+# for site_id, resultado in clusters.items():
+#     # Si el sitio devolvió False o None (ej. no hubo suficientes usuarios o bajo silhouette)
+#     if not resultado:
+#         print(f"Saltando escritura de clusters para el sitio {site_id} (sin resultados válidos)")
+#         continue
+#     db.analisis_clusters.insert_one({
+#         "siteId": site_id,
+#         "fechaGeneracion": datetime.now(timezone.utc),
+#         "k": resultado["k"],
+#         "silhouette": resultado["silhouette"],
+#         "scoresPorK": resultado["scoresPorK"],
+#         "asignaciones": resultado["asignaciones"],
+#         "perfiles": resultado["perfiles"]
+#     })
 
 # =========================
 # FINALIZAR
