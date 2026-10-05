@@ -17,6 +17,7 @@ RUN pip3 install --no-cache-dir --break-system-packages \
     scikit-learn \
     matplotlib \
     prefixspan \
-    crontab
+    mlxtend \
+    crontab 
 
 CMD ["node", "preprocesamiento.js"]
