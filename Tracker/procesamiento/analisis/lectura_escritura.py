@@ -32,8 +32,26 @@ db = client[DB_NAME]
 print("Conectado a MongoDB")
 
 # =========================
+# FECHA DE ÚLTIMO CÁLCULO
+# =========================
+ultimo_doc = db["analisis_apriori"].find_one(sort=[("fechaCalculo", -1)])
+fecha_desde = ultimo_doc["fechaCalculo"] if ultimo_doc else None
+if fecha_desde:
+    print(f"\nÚltimo cálculo de analiticas: {fecha_desde}, Se usarán solo datos posteriores a dicha fecha")
+else:
+    print("\nNo hay cálculos previos, se usarán todos los datos disponibles")
+    
+
+def filtro_revisado(fecha_desde):
+    cond = {"$exists": True}
+    if fecha_desde:
+        cond["$gt"] = fecha_desde
+    return cond
+
+# =========================
 # EXTRACCIÓN DE USUARIOS
 # =========================
+
 
 usuarios = list(
     db["usuarios"].find()
@@ -50,9 +68,7 @@ print(f"Cantidad de columnas: {len(df_usuarios.columns)}")
 # =========================
 filtro_sesiones = {
         "Fin": {"$exists": True},
-        "revisado": {"$exists": True},
-        "analisis": {"$ne": True}#,
-        #"inicio": {"$lte": hace_30_dias}
+        "revisado": filtro_revisado(fecha_desde),
     }
 
 sesiones = list(
@@ -72,7 +88,7 @@ print(f"Cantidad de columnas: {len(df_sesiones.columns)}")
 # EXTRACCIÓN DE EVENTOS
 # =========================
 eventos = list(
-    db["eventos"].find()
+    db["eventos"].find( {"revisado": filtro_revisado(fecha_desde)})
 )
 
 df_eventos = pd.json_normalize(eventos)
@@ -85,7 +101,7 @@ print(f"Cantidad de columnas: {len(df_eventos.columns)}")
 # EXTRACCIÓN DE FORMULARIOS
 # =========================
 formularios = list(
-    db["formularios"].find()
+    db["formularios"].find({"revisado": filtro_revisado(fecha_desde)})
 )
 
 df_formularios = pd.json_normalize(formularios)
