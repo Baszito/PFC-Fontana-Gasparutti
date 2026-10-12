@@ -2,177 +2,186 @@ from pymongo import MongoClient
 import pandas as pd
 from datetime import datetime, timedelta, timezone
 from analisis import analisis as analisis
-from crontab import CronTab
+from datetime import datetime, timedelta, timezone
 
-# =========================
-# CONFIGURACIÓN
-# =========================
+def ejecutar_analisis():
+    # =========================
+    # CONFIGURACIÓN
+    # =========================
 
-# Parametros de la DB
-MONGO_URI = "mongodb://localhost:27017"
-DB_NAME = "PruebaBBDD"
-ahora = datetime.now(timezone.utc)
-hace_30_dias = ahora - timedelta(days=30)
+    #------ Parametros de la DB
+    MONGO_URI = "mongodb://mongo:27017"
+    DB_NAME = "PruebaBBDD"
+    ahora = datetime.now(timezone.utc)
+    hace_30_dias = ahora - timedelta(days=30)
 
-# Parametros de los algoritmos 
-soporte_secuencial = 0.10
-long_secuencial = 3
+    #------ Parametros de los algoritmos 
+    #prefixpan
+    soporte_secuencial = 0.10
+    long_secuencial = 3
 
-k_min = 2
-k_max = 5
+    #k_medias
+    k_min = 2
+    k_max = 5
 
+    #apriori
 
-# =========================
-# CONEXIÓN
-# =========================
+    #random forest
 
-client = MongoClient(MONGO_URI)
-db = client[DB_NAME]
+    # =========================
+    # CONEXIÓN
+    # =========================
+    client = MongoClient(MONGO_URI)
+    db = client[DB_NAME]
+    print("Conectado a MongoDB")
 
-print("Conectado a MongoDB")
+    #=========================
+    # EXTRACCIÓN DE USUARIOS
+    # =========================
+    usuarios = list(
+        db["usuarios"].find()
+    )
+    df_usuarios = pd.json_normalize(usuarios)
+    print("\n=== USUARIOS ===")
+    print(f"Cantidad de registros: {len(df_usuarios)}")
+    print(f"Cantidad de columnas: {len(df_usuarios.columns)}")
 
-# =========================
-# EXTRACCIÓN DE USUARIOS
-# =========================
+    # =========================
+    # EXTRACCIÓN DE SESIONES
+    # =========================
+    filtro_sesiones = {
+            "Fin": {"$exists": True},
+            "inicio": {"$gte": hace_30_dias,
+                    "$lte": ahora}
+        }
 
-usuarios = list(
-    db["usuarios"].find()
-)
+    sesiones = list(
+        db["sesiones"].find(filtro_sesiones)
+    )
 
-df_usuarios = pd.json_normalize(usuarios)
+    if not sesiones:
+        print("Sin sesiones nuevas para analizar")
 
-print("\n=== USUARIOS ===")
-print(f"Cantidad de registros: {len(df_usuarios)}")
-print(f"Cantidad de columnas: {len(df_usuarios.columns)}")
+    df_sesiones = pd.json_normalize(sesiones)
 
-# =========================
-# EXTRACCIÓN DE SESIONES
-# =========================
-filtro_sesiones = {
-        "Fin": {"$exists": True},
-        "revisado": {"$exists": True},
-        "analisis": {"$ne": True}#,
-        #"inicio": {"$lte": hace_30_dias}
-    }
+    print("\n=== SESIONES ===")
+    print(f"Cantidad de registros: {len(df_sesiones)}")
+    print(f"Cantidad de columnas: {len(df_sesiones.columns)}")
 
-sesiones = list(
-    db["sesiones"].find(filtro_sesiones)
-)
+    # =========================
+    # EXTRACCIÓN DE EVENTOS
+    # =========================
+    eventos = list(
+        db["eventos"].find()
+    )
 
-if not sesiones:
-    print("Sin sesiones nuevas para analizar")
+    df_eventos = pd.json_normalize(eventos)
+    print("\n=== EVENTOS ===")
+    print(f"Cantidad de registros: {len(df_eventos)}")
+    print(f"Cantidad de columnas: {len(df_eventos.columns)}")
 
-df_sesiones = pd.json_normalize(sesiones)
+    # =========================
+    # EXTRACCIÓN DE FORMULARIOS
+    # =========================
+    formularios = list(
+        db["formularios"].find()
+    )
 
-print("\n=== SESIONES ===")
-print(f"Cantidad de registros: {len(df_sesiones)}")
-print(f"Cantidad de columnas: {len(df_sesiones.columns)}")
+    df_formularios = pd.json_normalize(formularios)
+    print("\n=== FORMULARIOS ===")
+    print(f"Cantidad de registros: {len(df_formularios)}")
+    print(f"Cantidad de columnas: {len(df_formularios.columns)}")
 
-# =========================
-# EXTRACCIÓN DE EVENTOS
-# =========================
-eventos = list(
-    db["eventos"].find()
-)
+    # =========================
+    # Pasamos a analisis
+    # =========================
 
-df_eventos = pd.json_normalize(eventos)
+    patrones_secuenciales, clusters, asociaciones, random_forests = analisis(df_usuarios, df_sesiones, df_eventos, df_formularios, soporte_secuencial,long_secuencial,k_min,k_max)
 
-print("\n=== EVENTOS ===")
-print(f"Cantidad de registros: {len(df_eventos)}")
-print(f"Cantidad de columnas: {len(df_eventos.columns)}")
+    # =========================
+    # Escritura
+    # =========================
 
-# =========================
-# EXTRACCIÓN DE FORMULARIOS
-# =========================
-formularios = list(
-    db["formularios"].find()
-)
-
-df_formularios = pd.json_normalize(formularios)
-
-print("\n=== FORMULARIOS ===")
-print(f"Cantidad de registros: {len(df_formularios)}")
-print(f"Cantidad de columnas: {len(df_formularios.columns)}")
-
-# =========================
-# Pasamos a analisis
-# =========================
-
-patrones_secuenciales, clusters, asociaciones, random_forests = analisis(df_usuarios, df_sesiones, df_eventos, df_formularios, soporte_secuencial,long_secuencial,k_min,k_max)
-
-
-# =========================
-# Escritura
-# =========================
-
-def guardar_resultados_apriori(db, asociaciones):
-    ahora = datetime.now()
-    docs = [
-        {"siteId": site_id, "fechaCalculo": ahora, **resultado}
-        for site_id, resultado in asociaciones.items()
-    ]
-    if docs:
-        db["analisis_apriori"].insert_many(docs)
-    print(f"Apriori: {len(docs)} documento(s) insertado(s)")
+    def guardar_resultados_apriori(db, asociaciones):
+        ahora = datetime.now()
+        docs = [
+            {"siteId": site_id, "fechaCalculo": ahora, **resultado}
+            for site_id, resultado in asociaciones.items()
+        ]
+        if docs:
+            db["analisis_apriori"].insert_many(docs)
+        print(f"Apriori: {len(docs)} documento(s) insertado(s)")
 
 
-def guardar_resultados_random_forest(db, random_forests):
-    ahora = datetime.now()
-    docs = []
+    def guardar_resultados_random_forest(db, random_forests):
+        ahora = datetime.now()
+        docs = []
 
-    for site_id, resultado in random_forests.items():
-        if resultado is None:
-            continue
-
-        modelos = {}
-        for nombre_modelo, valor in resultado.items():
-            if valor is None:
+        for site_id, resultado in random_forests.items():
+            if resultado is None:
                 continue
-            modelo, reporte = valor
-            modelos[nombre_modelo] = reporte
 
-        if modelos:  # solo guardamos el sitio si al menos un modelo entrenó bien
-            docs.append({"siteId": site_id, "fechaCalculo": ahora, "modelos": modelos})
+            modelos = {}
+            for nombre_modelo, valor in resultado.items():
+                if valor is None:
+                    continue
+                modelo, reporte = valor
+                modelos[nombre_modelo] = reporte
 
-    if docs:
-        db["analisis_random_forest"].insert_many(docs)
-    print(f"Random Forest: {len(docs)} documento(s) insertado(s)")
+            if modelos:  # solo guardamos el sitio si al menos un modelo entrenó bien
+                docs.append({"siteId": site_id, "fechaCalculo": ahora, "modelos": modelos})
 
-#Guardo los datos:
-guardar_resultados_apriori(db, asociaciones)
-guardar_resultados_random_forest(db, random_forests)
+        if docs:
+            db["analisis_random_forest"].insert_many(docs)
+        print(f"Random Forest: {len(docs)} documento(s) insertado(s)")
+
+    #Guardo los datos:
+    guardar_resultados_apriori(db, asociaciones)
+    guardar_resultados_random_forest(db, random_forests)
 
 
-# ========================= SECUENCIAL
+    # ========================= SECUENCIAL
 
-for site_id, resultados in patrones_secuenciales.items():
-        db.analisis_patrones_secuenciales.insert_one({
+    for site_id, resultados in patrones_secuenciales.items():
+            db.analisis_patrones_secuenciales.insert_one({
+                "siteId": site_id,
+                "fechaGeneracion": datetime.now(),
+                "soporteMinimo": soporte_secuencial,
+                "patrones": [{"soporte": s, "proporcion": pr, "secuencia": p} for s, pr, p in resultados]
+            })
+
+
+    for site_id, resultado in clusters.items():
+        # Si el sitio devolvió False o None (ej. no hubo suficientes usuarios o bajo silhouette)
+        if not resultado:
+            print(f"Saltando escritura de clusters para el sitio {site_id} (sin resultados válidos)")
+            continue
+        db.analisis_clusters.insert_one({
             "siteId": site_id,
-            "fechaGeneracion": datetime.now(),
-            "soporteMinimo": soporte_secuencial,
-            "patrones": [{"soporte": s, "proporcion": pr, "secuencia": p} for s, pr, p in resultados]
+            "fechaGeneracion": datetime.now(timezone.utc),
+            "k": resultado["k"],
+            "silhouette": resultado["silhouette"],
+            "scoresPorK": resultado["scoresPorK"],
+            "asignaciones": resultado["asignaciones"],
+            "perfiles": resultado["perfiles"]
         })
 
+    # =========================
+    # FINALIZAR
+    # =========================
 
-for site_id, resultado in clusters.items():
-    # Si el sitio devolvió False o None (ej. no hubo suficientes usuarios o bajo silhouette)
-    if not resultado:
-        print(f"Saltando escritura de clusters para el sitio {site_id} (sin resultados válidos)")
-        continue
-    db.analisis_clusters.insert_one({
-        "siteId": site_id,
-        "fechaGeneracion": datetime.now(timezone.utc),
-        "k": resultado["k"],
-        "silhouette": resultado["silhouette"],
-        "scoresPorK": resultado["scoresPorK"],
-        "asignaciones": resultado["asignaciones"],
-        "perfiles": resultado["perfiles"]
-    })
+    client.close()
 
-# =========================
-# FINALIZAR
-# =========================
+    print("\nConexión cerrada.")
 
-client.close()
+while True:
+    print("\n==============================")
+    print("INICIANDO ANÁLISIS")
+    print("==============================")
 
-print("\nConexión cerrada.")
+    ejecutar_analisis()
+
+    print("\nAnálisis finalizado.")
+    print("Próxima ejecución en 30 días.")
+
+    time.sleep(30 * 24 * 60 * 60)

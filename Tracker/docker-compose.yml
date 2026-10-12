@@ -56,5 +56,6 @@ services:
       - mongo
       - preprocesamiento
       - procesamiento
+      
 volumes:
   db:
