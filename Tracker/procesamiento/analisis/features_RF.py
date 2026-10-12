@@ -145,47 +145,40 @@ def preparar_dataset_abandono_formulario(df_formularios, df_features_sesion):
 #-------------------------------------------------
 #- DataSet para modelo de recurrencia de usuario - 
 #-------------------------------------------------
-def preparar_dataset_recurrencia_usuario(df_usuarios, df_features_sesion):
+def preparar_dataset_recurrencia_usuario(df_usuarios):
     columnas_esperadas = ["clave_usuario", "is_mobile", "referrerOriginal", "duracionSesion", "cantidad_paginas", "target"]
 
-    if df_usuarios.empty or "siteId" not in df_usuarios.columns or "userId" not in df_usuarios.columns:
+    requeridas = ["siteId", "userId", "totalSesiones", "is_mobile",
+                  "duracionPrimeraSesion", "cantidadPaginasPrimeraSesion", "referrerOriginal"]
+    if df_usuarios.empty or any(c not in df_usuarios.columns for c in requeridas):
         return pd.DataFrame(columns=columnas_esperadas)
 
-    primera_sesion = (
-        df_features_sesion
-        .dropna(subset=["duracionSesion"])
-        .sort_values("inicio")
-        .groupby(["siteId", "userId"])
-        .first()
-        .reset_index()
-    )
+    df = df_usuarios.dropna(subset=["duracionPrimeraSesion"]).copy()
+    df["clave_usuario"] = df["siteId"] + "_" + df["userId"]
+    df["target"] = df["totalSesiones"] > 1
 
-    df_usuarios_copia = df_usuarios.copy()
-    df_usuarios_copia["clave_usuario"] = df_usuarios_copia["siteId"] + "_" + df_usuarios_copia["userId"]
-    primera_sesion["clave_usuario"] = primera_sesion["siteId"] + "_" + primera_sesion["userId"]
-
-    df = primera_sesion.merge(
-        df_usuarios_copia[["clave_usuario", "totalSesiones"]],
-        on="clave_usuario",
-        how="inner"
-    )
-
-    df["es_recurrente"] = df["totalSesiones"] > 1
-
-    return df[[
-        "clave_usuario", "is_mobile", "referrer", "duracionSesion",
-        "cantidad_paginas", "es_recurrente"
-    ]].rename(columns={"referrer": "referrerOriginal", "es_recurrente": "target"})
+    return df.rename(columns={
+        "duracionPrimeraSesion": "duracionSesion",
+        "cantidadPaginasPrimeraSesion": "cantidad_paginas"
+    })[["clave_usuario", "is_mobile", "referrerOriginal", "duracionSesion", "cantidad_paginas", "target"]]
 
 def DDBB_RF(df_sesiones, df_eventos, df_formularios, df_usuarios):
+    columnas_vacias_sesion = ["clave_sesion", "is_mobile", "referrer", "cantidad_paginas", "rage_click", "duracionSesion", "target"]
+
+    # recurrencia_usuario solo tiene sentido reentrenarlo si hubo sesiones nuevas
+    # (son las únicas que pueden cambiar totalSesiones, y por lo tanto el target)
+    if df_sesiones.empty:
+        dataset_recurrencia = pd.DataFrame(columns=["clave_usuario", "is_mobile", "referrerOriginal", "duracionSesion", "cantidad_paginas", "target"])
+    else:
+        dataset_recurrencia = preparar_dataset_recurrencia_usuario(df_usuarios)
+
     if df_sesiones.empty or "siteId" not in df_sesiones.columns:
-        vacio = {
-            "conversion": ["clave_sesion", "is_mobile", "referrer", "cantidad_paginas", "rage_click", "duracionSesion", "target"],
-            "abandono_carrito": ["clave_sesion", "is_mobile", "referrer", "cantidad_paginas", "rage_click", "duracionSesion", "target"],
-            "abandono_formulario": ["clave_sesion", "is_mobile", "referrer", "cantidad_paginas", "rage_click", "duracionSesion", "target"],
-            "recurrencia_usuario": ["clave_usuario", "is_mobile", "referrerOriginal", "duracionSesion", "cantidad_paginas", "target"]
+        return {
+            "conversion": pd.DataFrame(columns=columnas_vacias_sesion),
+            "abandono_carrito": pd.DataFrame(columns=columnas_vacias_sesion),
+            "abandono_formulario": pd.DataFrame(columns=columnas_vacias_sesion),
+            "recurrencia_usuario": dataset_recurrencia
         }
-        return {k: pd.DataFrame(columns=v) for k, v in vacio.items()}
 
     df_features_sesion = preparar_feature_sesion(df_sesiones, df_eventos)
 
@@ -193,5 +186,5 @@ def DDBB_RF(df_sesiones, df_eventos, df_formularios, df_usuarios):
         "conversion": preparar_dataset_conversion(df_features_sesion),
         "abandono_carrito": preparar_dataset_abandono_carrito(df_features_sesion),
         "abandono_formulario": preparar_dataset_abandono_formulario(df_formularios, df_features_sesion),
-        "recurrencia_usuario": preparar_dataset_recurrencia_usuario(df_usuarios, df_features_sesion)
+        "recurrencia_usuario": dataset_recurrencia
     }

@@ -22,6 +22,7 @@ const ARQUETIPOS = {
     tasaRebote: () => entre(0, 0.3),
     interaccionesPromedio: () => entre(1, 4),
     probabilidadConversion: 0.45,
+    probabilidadConversionPrimeraSesion: 0.2, // conversión en la 1er visita, más baja que la general
     tiempoHastaConversionMs: () => entre(15000, 120000),
     frecuenciaRecurrencia: () => entre(0.2, 1.5),
   },
@@ -31,6 +32,7 @@ const ARQUETIPOS = {
     tasaRebote: () => entre(0, 0.15),
     interaccionesPromedio: () => entre(8, 18),
     probabilidadConversion: 0.15,
+    probabilidadConversionPrimeraSesion: 0.05,
     tiempoHastaConversionMs: () => entre(180000, 900000),
     frecuenciaRecurrencia: () => entre(0.1, 0.8),
   },
@@ -41,14 +43,19 @@ function crearUsuario(tipo) {
   const userId = uuid();
   const _id = `${siteId}_${userId}`;
 
-  // totalSesiones se decide ACÁ, y el script de sesiones va a generar
-  // exactamente esta cantidad real de sesiones para este usuario.
   const totalSesiones = Math.max(1, Math.round(entre(1, 6)));
   const diasActivo = Math.max(0, Math.round(entre(0, 30)));
   const convirtio = Math.random() < arq.probabilidadConversion;
   const esMobile = Math.random() < 0.4;
 
   const primeraSesion = new Date(ahora.getTime() - diasActivo * 24 * 60 * 60 * 1000);
+
+  // --- Datos "congelados" de la primera sesión ---
+  // Simulan lo que actualizarUsuarios() guardaría con $setOnInsert a partir
+  // de la primera sesión real de este usuario.
+  const duracionPrimeraSesion = Number(arq.duracionPromedio().toFixed(4));
+  const cantidadPaginasPrimeraSesion = arq.paginasPorSesionPromedio();
+  const convirtioPrimeraSesion = Math.random() < arq.probabilidadConversionPrimeraSesion;
 
   return {
     _id,
@@ -60,6 +67,12 @@ function crearUsuario(tipo) {
     ultimaConexion: ahora,
     userId,
     arquetipo: tipo, // usado por sesiones_sinteticas_rf.js para generar el comportamiento
+
+    // Campos "congelados" de la primera sesión (usados por preparar_dataset_recurrencia_usuario)
+    duracionPrimeraSesion,
+    cantidadPaginasPrimeraSesion,
+    convirtioPrimeraSesion,
+
     metricas: {
       totalSesiones,
       duracionPromedio: Number(arq.duracionPromedio().toFixed(4)),

@@ -446,7 +446,10 @@ async function actualizarUsuarios(db) {
           userId: r._id.userId,
           fechaInicio: r.primeraSesion.inicio,
           referrerOriginal: r.primeraSesion.referrer,
-          is_mobile: r.is_mobile
+          is_mobile: r.primeraSesion.is_mobile,
+          duracionPrimeraSesion: r.primeraSesion.duracionSesion,
+          cantidadPaginasPrimeraSesion: Array.isArray(r.primeraSesion.rutas) ? r.primeraSesion.rutas.length : 0,
+          convirtioPrimeraSesion: Array.isArray(r.primeraSesion.eventosClave) ? r.primeraSesion.eventosClave.some(e => ["compra", "completar_formulario", "contacto"].includes(e.subtipo)) : false
         },
         $set: {
           ultimaConexion: r.ultimaSesion.inicio,
