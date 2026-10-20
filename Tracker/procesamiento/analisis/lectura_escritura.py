@@ -1,14 +1,15 @@
 from pymongo import MongoClient
 import pandas as pd
+import time
 from datetime import datetime, timedelta, timezone
 from analisis import analisis as analisis
 from datetime import datetime, timedelta, timezone
-
+periodo_ejecucion_dias = 30
 def ejecutar_analisis():
     # =========================
     # CONFIGURACIÓN
     # =========================
-
+    
     #------ Parametros de la DB
     MONGO_URI = "mongodb://mongo:27017"
     DB_NAME = "PruebaBBDD"
@@ -184,4 +185,4 @@ while True:
     print("\nAnálisis finalizado.")
     print("Próxima ejecución en 30 días.")
 
-    time.sleep(30 * 24 * 60 * 60)
+    time.sleep(periodo_ejecucion_dias * 24 * 60 * 60)

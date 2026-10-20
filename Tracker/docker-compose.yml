@@ -52,10 +52,11 @@ services:
   analisis:
     build: ./procesamiento
     command: ["python3", "analisis/lectura_escritura.py"]
+    environment:
+      - PYTHONUNBUFFERED=1
     depends_on:
       - mongo
       - preprocesamiento
       - procesamiento
-      
 volumes:
   db:
