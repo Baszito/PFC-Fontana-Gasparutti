@@ -1,0 +1,15 @@
+{
+  "name": "recomendaciones",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Módulo de recomendaciones: lee el contexto de cada sitio, genera, pondera y guarda las recomendaciones",
+  "main": "recomendaciones.js",
+  "scripts": {
+    "start": "node recomendaciones.js",
+    "seed": "node seed_leerContextos.js"
+  },
+  "dependencies": {
+    "mongodb": "^6.0.0",
+    "node-cron": "^3.0.3"
+  }
+}
