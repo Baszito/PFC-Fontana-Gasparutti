@@ -16,7 +16,7 @@
 //   distribuciones: { paginaInicio, paginaAbandono, pais, dispositivo },   // sesiones, período actual
 //   carrito: { sesiones, conCarrito, abandonoCarrito },                    // sesiones, período actual
 //   paginasConversion: [{ pagina, cantidad }],  // eventos objetivo de conversión, período actual
-//   usuarios: { ... },                          // estado actual (sin ventana)
+//   usuarios: { ... },                          // usuarios activos en el período actual
 //   analisis: { clusters, patrones, apriori, randomForest }   // último documento de cada uno
 // }
 //
@@ -40,19 +40,17 @@ const SUBTIPOS_CONVERSION = ["compra", "suscripcion", "contacto"];   // sin carr
 
 
 /*------------------------ ---------------------------
--------------------------- funciones auxiliares ----------------
+-------------------------- Utilidades ----------------
 -------------------------- -------------------------*/
-
-const esNumero = (x) => typeof x === "number" && Number.isFinite(x);
-const sumarCampo = (lista, campo) => lista.reduce((acum, x) => acum + (esNumero(x[campo]) ? x[campo] : 0), 0);
-
-// Llos sitios salen de la colección "sitios", igual que en el procesamiento
+// Los sitios salen de la colección "sitios", igual que en el procesamiento
 async function obtenerSitios(db) {
   const sitios = await db.collection("sitios").find({}, { projection: { _id: 1 } }).toArray();
   return sitios.map(s => s._id.toString());
 }
 
-// misma normalización que usa PrefixSpan: sin dominio, ruta en minúsculas y sin barra final,
+// Misma normalización que usa PrefixSpan: sin dominio, ruta en minúsculas y sin barra final,
+// parámetros ordenados por nombre (se conserva el primer valor de cada uno).
+// Así la "misma" página no aparece repetida y coincide con las secuencias de analisis_patrones.
 function normalizarPagina(url) {
   try {
     const u = new URL(url);
@@ -97,8 +95,11 @@ const condicionSesiones = (siteId, ventana) => ({
 /*------------------------ ---------------------------
 -------------------------- Sección: sitio ------------
 -------------------------- -------------------------*/
-
-//campos a traerme de metricas_resumen
+// Un snapshot = un período, así que no hace falta combinar nada: el período actual es el último
+// snapshot y el anterior es el que le precede. Solo se leen los campos del sitio (los arreglos
+// de páginas y formularios quedan afuera).
+// Un snapshot sin sesiones también se guarda: es un período real con 0 visitas, no un dato
+// faltante. En ese caso las métricas del período son la ventana vacía (ver ventanaVacia).
 const CAMPOS_SITIO = {
   fechaCalculo: 1,
   totalSesiones: 1,
@@ -112,13 +113,15 @@ const CAMPOS_SITIO = {
   tiempoConversionPromedio: 1   // en segundos
 };
 
-//leo los documentos que necesito
+// Lee los últimos 3 snapshots y arma los períodos. Devuelve null si el sitio no tiene snapshots.
+//   { actual: { desde, hasta, metricas }, anterior: { desde, hasta, metricas } | null }
+// El primer snapshot de un sitio cubre desde el origen: su "desde" es la época.
 async function leerPeriodos(db, siteId) {
   const docs = await db.collection("metricas_resumen")
     .find({ siteId: siteId }, { projection: CAMPOS_SITIO })
     .sort({ fechaCalculo: -1 })
-    .limit(2)
-    .toArray();                                    // me traigo los dos ultimos
+    .limit(3)
+    .toArray();                                    // [último, penúltimo, antepenúltimo]
   if (docs.length === 0) return null;
 
   const periodo = (doc, previo) => ({
@@ -132,7 +135,9 @@ async function leerPeriodos(db, siteId) {
   };
 }
 
-// ventanita vacia, para devolver si no hay sesiones
+// Período sin sesiones: no hay nada que medir. Se devuelve la ventana vacía y se ignora el resto
+// del snapshot. Los conteos quedan en 0 (un mes con 0 visitas es un dato real: ATR-02 y ATR-03
+// lo necesitan) y todo lo demás en null (no hay promedios ni tasas que calcular).
 function ventanaVacia() {
   return {
     totalSesiones: 0, usuariosNuevos: 0,
@@ -148,7 +153,8 @@ function metricasDe(doc) {
   return metricas;
 }
 
-// y aca es donde llamo a todo.
+// Sección sitio: las métricas del sitio de los dos períodos.
+// Los períodos ya vienen leídos (leerPeriodos), porque todas las secciones los necesitan.
 function leerSitio(periodos) {
   return {
     actual: periodos.actual.metricas,
@@ -160,9 +166,8 @@ function leerSitio(periodos) {
 /*------------------------ ---------------------------
 -------------------------- Sección: páginas ----------
 -------------------------- -------------------------*/
-//como las metricas de pagina estan dentro de "metricas_paginas", dentro de "metricas_resumen", trabajamos sobre eso directamente
-
-// campos a traerme.
+// Las métricas de cada página están dentro del documento de metricas_resumen del período actual
+// (arreglo metricas_paginas). Se lee ese único documento: no hay nada que sumar entre períodos.
 const CAMPOS_PAGINAS = {
   "metricas_paginas.pagina": 1,
   "metricas_paginas.pageviews": 1,
@@ -175,7 +180,6 @@ const CAMPOS_PAGINAS = {
   "metricas_paginas.elementos.hoverPromedio": 1
 };
 
-//lo mismo de antes, me traigo sitios, solo que, de momento, solo se calculan sobre el periodo actual
 async function leerPaginas(db, siteId, periodo) {
   const doc = await db.collection("metricas_resumen")
     .findOne({ siteId: siteId, fechaCalculo: periodo.hasta }, { projection: CAMPOS_PAGINAS });
@@ -183,6 +187,8 @@ async function leerPaginas(db, siteId, periodo) {
   return agruparPaginas(paginas);
 }
 
+const esNumero = (x) => typeof x === "number" && Number.isFinite(x);
+const sumarCampo = (lista, campo) => lista.reduce((acum, x) => acum + (esNumero(x[campo]) ? x[campo] : 0), 0);
 
 // Promedio de varios valores ponderado por visitas. Ignora los que no tienen valor; si ninguno lo tiene, null.
 function promediarPorVisitas(items) {          // items: [{ valor, visitas }]
@@ -196,23 +202,22 @@ function promediarPorVisitas(items) {          // items: [{ valor, visitas }]
   return peso > 0 ? suma / peso : null;
 }
 
-// esta es como la funcion maestra
+// Una misma página puede venir con URLs distintas (con o sin barra final, mayúsculas, parámetros en
+// otro orden). Se agrupan por URL normalizada: los conteos se suman y los promedios se ponderan
+// por pageviews. Si cada página viene una sola vez, el resultado es igual a lo guardado.
+// Función pura (sin base de datos).
 function agruparPaginas(paginas) {
   const grupos = new Map();
   for (const p of paginas) {
     if (typeof p.pagina !== "string") continue;
     const clave = normalizarPagina(p.pagina);
-    //hay que normalizarlas
     if (!grupos.has(clave)) grupos.set(clave, []);
     grupos.get(clave).push(p);
   }
-  //con todo esto creamos el mapa
 
-  //aca hay algo que no tuvimos en cuenta, y era normalizar antes
-  //asi que sumamos ahora, despues se podria modificar
   const items = [...grupos].map(([pagina, entradas]) => ({
     pagina,
-    pageviews: sumarCampo(entradas, "pageviews"), //sumas de cosas obtenidas
+    pageviews: sumarCampo(entradas, "pageviews"),
     clicksMuertos: sumarCampo(entradas, "clicksMuertos"),
     rageClicks: sumarCampo(entradas, "rageClicks"),
     scrollDepthPromedio: promediarPorVisitas(entradas.map(e => ({ valor: e.scrollDepthPromedio, visitas: e.pageviews }))),
@@ -240,11 +245,14 @@ function agruparElementos(entradas) {
   }));
 }
 
+
 /*------------------------ ---------------------------
 -------------------------- Sección: formularios ------
 -------------------------- -------------------------*/
-// La tasa de abandono y el campo de abandono más común vienen de metricas_resumen 
-// total de formularios -> Conteo sobre formularios
+// La tasa de abandono y el campo de abandono más común ya están calculados en el documento de
+// metricas_resumen del período actual (arreglo metricas_formularios). Ese documento no guarda
+// cuántos formularios hay detrás de cada tasa, y las reglas lo necesitan (mínimo y confianza),
+// así que ese conteo se obtiene de la colección formularios, en el mismo período.
 const CAMPOS_FORMULARIOS = {
   "metricas_formularios.formId": 1,
   "metricas_formularios.tasaAbandono": 1,
@@ -273,25 +281,33 @@ async function leerFormularios(db, siteId, periodo) {
   return { items };
 }
 
+
 /*------------------------ ---------------------------
 -------------------------- Sección: distribuciones ---
 -------------------------- -------------------------*/
 // metricas_resumen solo guarda el valor "habitual" (la página de ingreso más frecuente, el país
-// más frecuente...), no qué proporción de las sesiones representa. Para esa proporción hay que
-// contar sobre las sesiones.
-async function leerDistribuciones(db, siteId, ventana) {
+// más frecuente...), no qué proporción de las sesiones representa, y las reglas necesitan esa
+// proporción. Por eso se cuenta sobre las sesiones del período actual.
+// Filtro de sesiones: el mismo que usa el procesamiento para totalSesiones (revisadas después del
+// cálculo anterior), con tope en el cálculo actual. Así los porcentajes son sobre las mismas sesiones.
+async function leerDistribuciones(db, siteId, periodo) {
   const sesiones = db.collection("sesiones");
-  const base = condicionSesiones(siteId, ventana);
+  const delPeriodo = { siteId: siteId, revisado: { $gt: periodo.desde, $lte: periodo.hasta } };
+
+  // Cuántas sesiones hay por cada valor distinto de un campo. Ignora las que no lo tienen o lo
+  // tienen con otro tipo (p. ej. un país sin traducir llega como arreglo).
+  // Se usa $type dentro de $expr (y no como filtro del campo) porque el filtro {$type:"string"} también
+  // acepta arreglos que contienen un string, y un país sin traducir llega como arreglo.
   const contarPor = (campo, tipo) => sesiones.aggregate([
     { $match: { ...delPeriodo, $expr: { $eq: [{ $type: "$" + campo }, tipo] } } },
     { $group: { _id: "$" + campo, cantidad: { $sum: 1 } } }
   ]).toArray();
 
   const [entradas, salidas, paises, dispositivos] = await Promise.all([
-    agrupar("paginaInicio", "string"),
-    agrupar("paginaAbandono", "string"),
-    agrupar("geo.pais", "string"),
-    agrupar("is_mobile", "bool")
+    contarPor("paginaInicio", "string"),
+    contarPor("paginaAbandono", "string"),
+    contarPor("geo.pais", "string"),
+    contarPor("is_mobile", "bool")
   ]);
 
   const cantidadDe = (valor) => (dispositivos.find(d => d._id === valor) || { cantidad: 0 }).cantidad;
@@ -310,9 +326,11 @@ async function leerDistribuciones(db, siteId, ventana) {
 /*------------------------ ---------------------------
 -------------------------- Sección: carrito ----------
 -------------------------- -------------------------*/
-//aca hubo algo que no previmos
-//calculamos la tasa de abandono de carrito de usuario
-//pero no algo como tasaAbandonototal/tasaconAgregarCarrito
+// ACC-05 necesita cuántas sesiones agregaron un producto al carrito y cuántas de esas no
+// compraron. Ningún documento guarda esos conteos para el sitio (en usuarios.metricas hay una
+// tasa por usuario), así que se cuentan sobre las sesiones del período actual.
+// Mismo filtro de sesiones que distribuciones. El total de sesiones del período (para el alcance)
+// ya está en sitio.actual.totalSesiones.
 async function leerCarrito(db, siteId, periodo) {
   const subtipos = { $ifNull: ["$eventosClave.subtipo", []] };
   const hubo = (lista) => ({ $gt: [{ $size: { $setIntersection: [lista, subtipos] } }, 0] });
@@ -334,7 +352,10 @@ async function leerCarrito(db, siteId, periodo) {
 /*------------------------ ---------------------------
 -------------------------- Sección: páginas de conversión
 -------------------------- -------------------------*/
-// esta es para apoyar a PrefixSpan
+// Páginas donde ocurrió un evento objetivo de conversión en el período actual (compra, suscripción
+// o contacto; agregar al carrito no cuenta). Los patrones secuenciales solo traen páginas, y PS-01
+// y PS-03 necesitan saber cuáles de ellas son de conversión. Las URL se normalizan igual que en
+// los patrones, para que coincidan.
 async function leerPaginasConversion(db, siteId, periodo) {
   const filas = await db.collection("eventos").aggregate([
     { $match: {
@@ -428,13 +449,30 @@ async function leerUsuarios(db, siteId, periodo) {
 /*------------------------ ---------------------------
 -------------------------- Sección: análisis ---------
 -------------------------- -------------------------*/
-// Último documento de cada técnica para el sitio. Se ordena por _id y no por fecha, porque el
-// campo se llama distinto según la colección (fechaGeneracion o fechaCalculo).
-// Se devuelve tal cual está guardado, salvo las asignaciones de clusters (una por usuario),
-// que las recomendaciones no usan. Si todavía no hay resultados para el sitio, queda en null.
-async function ultimoDocumento(db, coleccion, siteId, projection) {
+// Resultados de las cuatro técnicas de análisis (PS, KM, AP, RF). Se toma el último documento de
+// cada una para el sitio: el análisis corre con la misma frecuencia que las recomendaciones, así
+// que el último es el de este ciclo (su fecha queda en meta.fechasAnalisis).
+// Se ordena por _id y no por fecha, porque el campo se llama distinto según la colección.
+// Solo se traen los campos que usan las reglas; si el sitio todavía no tiene resultados, queda null.
+const MODELOS_RF = ["conversion_sesion", "abandono_carrito", "abandono_formulario", "recurrencia_usuario"];
+
+const CAMPOS_ANALISIS = {
+  // KM-01..05: cantidad de usuarios y promedios de cada cluster, k y silhouette
+  analisis_clusters: { fechaGeneracion: 1, k: 1, silhouette: 1, perfiles: 1 },
+  // PS-01..05: secuencias con su soporte
+  analisis_patrones_secuenciales: { fechaGeneracion: 1, patrones: 1 },
+  // AP-01..04: reglas de asociación sobre rutas y sobre eventos clave
+  analisis_apriori: { fechaCalculo: 1, "apriori_rutas.reglas": 1, "apriori_eventosClave.reglas": 1 },
+  // RF-01..04: importancia y dirección de cada variable (SHAP) y calidad del modelo (F1)
+  analisis_random_forest: {
+    fechaCalculo: 1,
+    ...Object.fromEntries(MODELOS_RF.flatMap(m => [[`modelos.${m}.shap_resumen`, 1], [`modelos.${m}.reporte_clasificacion`, 1]]))
+  }
+};
+
+async function ultimoDocumento(db, coleccion, siteId) {
   const r = await db.collection(coleccion)
-    .find({ siteId: siteId }, { projection: projection || {} })
+    .find({ siteId: siteId }, { projection: CAMPOS_ANALISIS[coleccion] })
     .sort({ _id: -1 })
     .limit(1)
     .toArray();
@@ -456,7 +494,7 @@ function normalizarAprioriRutas(apriori) {
 
 async function leerAnalisis(db, siteId) {
   const [clusters, patrones, apriori, randomForest] = await Promise.all([
-    ultimoDocumento(db, "analisis_clusters", siteId, { asignaciones: 0 }),
+    ultimoDocumento(db, "analisis_clusters", siteId),
     ultimoDocumento(db, "analisis_patrones_secuenciales", siteId),
     ultimoDocumento(db, "analisis_apriori", siteId),
     ultimoDocumento(db, "analisis_random_forest", siteId)
@@ -470,7 +508,7 @@ const fechaDe = (doc) => (doc ? (doc.fechaGeneracion || doc.fechaCalculo || null
 /*------------------------ ---------------------------
 -------------------------- leerContextos -------------
 -------------------------- -------------------------*/
-// opciones: { ahora }. Se deja por si hay que sumar mas cosas
+// opciones: { ahora } (solo para registrar la fecha de generación; se puede inyectar en tests)
 async function leerContextos(db, opciones = {}) {
   const { ahora = new Date() } = opciones;
   const sitios = await obtenerSitios(db);
