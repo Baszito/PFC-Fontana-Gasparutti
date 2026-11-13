@@ -95,8 +95,5 @@ module.exports = {
   UMBRAL_CALIDAD_MODELO: 0.60,    // F1 mínimo de la clase positiva
   UMBRAL_IMPORTANCIA_SHAP: 0.05,  // importanciaPromedio mínima de una variable (escala de probabilidad)
   UMBRAL_DIRECCION: 0.3,          // |dirección| mínima
-  TOP_VARIABLES: 2,               // variables por modelo que generan recomendación (valor propuesto)
-  UMBRAL_RECURRENTES_ALTA: 0.40    // FID-07
-
-  
+  TOP_VARIABLES: 2                // variables por modelo que generan recomendación (valor propuesto)
 };
