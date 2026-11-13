@@ -72,5 +72,29 @@ module.exports = {
   UMBRAL_DIAS_ACTIVO: 2,           // FID-04: días
   DIF_CONVERSION: 1.5,             // FID-05: veces que convierten más los recurrentes que los nuevos
   UMBRAL_NO_REGRESAN: 0.70,        // FID-06: compradores con una sola sesión
-  UMBRAL_RECURRENTES_ALTA: 0.40    // FID-07
+  UMBRAL_RECURRENTES_ALTA: 0.40,    // FID-07
+
+  // --- Patrones secuenciales
+  SOPORTE_SECUENCIAL: 0.10,   // PS-01 a PS-05: debe coincidir con soporte_secuencial de lectura_escritura.py
+  UMBRAL_PASOS: 5,            // PS-03: páginas hasta llegar a una conversión
+  UMBRAL_PATRONES: 3,         // PS-04: patrones frecuentes que comparten una página intermedia
+
+  // --- Clusters
+  REL_ALTO: 1.25,                            // KM-01 y KM-03: veces el promedio general
+  MIN_USUARIOS_CLUSTER: 10,                  // KM-01 a KM-04: tamaño mínimo de un cluster
+  UMBRAL_TAMANO_CLUSTER: 0.15,               // KM-02: proporción mínima de los usuarios
+  UMBRAL_SILHOUETTE: 0.25,                   // KM-05
+  DIVISOR_TIEMPO_CONVERSION_USUARIO: 1000,   // KM-04: metricas.tiempoHastaConversion está en ms (verificar)
+
+    // --- Reglas de asociación (Apriori)
+  UMBRAL_CONFIANZA: 0.60,   // AP-01 a AP-03: confianza mínima de la regla
+  UMBRAL_LIFT: 1.5,         // AP-01 a AP-04: lift mínimo de la regla
+  FRAGMENTOS_PAGINAS_EMBUDO: ["carrito", "checkout", "pago", "envio", "confirmacion", "registro", "login"],
+                            // AP-03: una página que contenga alguno de estos textos no es "informativa"
+
+  // --- Random Forest
+  UMBRAL_CALIDAD_MODELO: 0.60,    // F1 mínimo de la clase positiva
+  UMBRAL_IMPORTANCIA_SHAP: 0.05,  // importanciaPromedio mínima de una variable (escala de probabilidad)
+  UMBRAL_DIRECCION: 0.3,          // |dirección| mínima
+  TOP_VARIABLES: 2,               // variables por modelo que generan recomendación (valor propuesto)
 };

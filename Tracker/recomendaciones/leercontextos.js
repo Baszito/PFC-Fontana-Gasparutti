@@ -441,6 +441,19 @@ async function ultimoDocumento(db, coleccion, siteId, projection) {
   return r.length > 0 ? r[0] : null;
 }
 
+function normalizarAprioriRutas(apriori) {
+  if (!apriori || !apriori.apriori_rutas) return apriori;
+  const r = apriori.apriori_rutas;
+  const norm = (items) => (items || []).map(pg => normalizarPagina(pg));
+  return {
+    ...apriori,
+    apriori_rutas: {
+      itemsets_frecuentes: (r.itemsets_frecuentes || []).map(i => ({ ...i, items: norm(i.items) })),
+      reglas: (r.reglas || []).map(g => ({ ...g, antecedente: norm(g.antecedente), consecuente: norm(g.consecuente) }))
+    }
+  };
+}
+
 async function leerAnalisis(db, siteId) {
   const [clusters, patrones, apriori, randomForest] = await Promise.all([
     ultimoDocumento(db, "analisis_clusters", siteId, { asignaciones: 0 }),
@@ -448,7 +461,7 @@ async function leerAnalisis(db, siteId) {
     ultimoDocumento(db, "analisis_apriori", siteId),
     ultimoDocumento(db, "analisis_random_forest", siteId)
   ]);
-  return { clusters, patrones, apriori, randomForest };
+  return { clusters, patrones, apriori: normalizarAprioriRutas(apriori), randomForest };
 }
 
 const fechaDe = (doc) => (doc ? (doc.fechaGeneracion || doc.fechaCalculo || null) : null);
@@ -502,12 +515,12 @@ async function leerContextos(db, opciones = {}) {
           actual: { desde: actual.desde, hasta: actual.hasta },
           anterior: periodos.anterior ? { desde: periodos.anterior.desde, hasta: periodos.anterior.hasta } : null
         },
-        //fechasAnalisis: {
-         // clusters: fechaDe(analisis && analisis.clusters),
-          //patrones: fechaDe(analisis && analisis.patrones),
-          //apriori: fechaDe(analisis && analisis.apriori),
-          //randomForest: fechaDe(analisis && analisis.randomForest)
-        //},
+        fechasAnalisis: {
+          clusters: fechaDe(analisis && analisis.clusters),
+          patrones: fechaDe(analisis && analisis.patrones),
+          apriori: fechaDe(analisis && analisis.apriori),
+          randomForest: fechaDe(analisis && analisis.randomForest)
+        },
         errores
       },
       sitio,
@@ -516,7 +529,8 @@ async function leerContextos(db, opciones = {}) {
       distribuciones,
       carrito,
       paginasConversion,
-      usuarios
+      usuarios,
+      analisis
     });
   }
 
