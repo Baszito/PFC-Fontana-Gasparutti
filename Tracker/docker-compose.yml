@@ -49,5 +49,13 @@ services:
       - mongo
       - preprocesamiento
 
+#------------------------------------------------------------------------
+#------------------------RECOMENDACIONES---------------------------------
+  recomendaciones:
+    build: ./recomendaciones
+    command: node recomendaciones.js
+    depends_on:
+      - mongo
+
 volumes:
   db:

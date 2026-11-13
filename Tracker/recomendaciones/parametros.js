@@ -15,10 +15,10 @@
 module.exports = {
   // --- Ponderación: puntaje = impacto x severidad x alcance x confianza
   N_CONFIABLE: 100,         // C1: confianza = min(1, datos / N_CONFIABLE)
-  SEVERIDAD_MINIMA: 0.10,   // piso: una regla que se dispara nunca pesa 0
-  CORTE_ALTA: 1.0,          // puntaje >= CORTE_ALTA  -> prioridad Alta
-  CORTE_MEDIA: 0.4,         // puntaje >= CORTE_MEDIA -> prioridad Media (menor: Baja)
-
+  SEVERIDAD_MINIMA: 0.10,   // piso: una regla que se dispara nunca pesa menos de
+  CORTE_ALTA: 5.5,
+  CORTE_MEDIA: 3.5,
+  
   // --- Listado principal que ve el dueño del sitio (etapa de organización)
   TOPE_RECOMENDACIONES: 10,
   TOPE_POR_ETAPA: 2,
@@ -73,4 +73,6 @@ module.exports = {
   DIF_CONVERSION: 1.5,             // FID-05: veces que convierten más los recurrentes que los nuevos
   UMBRAL_NO_REGRESAN: 0.70,        // FID-06: compradores con una sola sesión
   UMBRAL_RECURRENTES_ALTA: 0.40    // FID-07
+
+  
 };
