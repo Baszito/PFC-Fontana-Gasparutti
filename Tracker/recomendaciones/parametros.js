@@ -13,12 +13,11 @@
 //   - la unidad de cada valor, cuando no es una proporción, está en su comentario
 
 module.exports = {
-  // --- Ponderación: puntaje = impacto x severidad x alcance x confianza
-  N_CONFIABLE: 100,         // C1: confianza = min(1, datos / N_CONFIABLE)
-  SEVERIDAD_MINIMA: 0.10,   // piso: una regla que se dispara nunca pesa menos de
-  CORTE_ALTA: 5.5,
-  CORTE_MEDIA: 3.5,
-  
+  // --- Ponderación: puntaje = 1 + 3 x (impacto x severidad x alcance), de 1 a 10
+  SEVERIDAD_MINIMA: 0.10,   // piso: una regla que se dispara nunca pesa 0
+  CORTE_ALTA: 5.5,          // puntaje >= CORTE_ALTA  -> prioridad Alta (escala 1 a 10). Ej.: impacto 3, severidad 0.5, alcance 1
+  CORTE_MEDIA: 3.5,         // puntaje >= CORTE_MEDIA -> prioridad Media (menor: Baja). Ej.: impacto 2, severidad 0.5, alcance 0.85
+
   // --- Listado principal que ve el dueño del sitio (etapa de organización)
   TOPE_RECOMENDACIONES: 10,
   TOPE_POR_ETAPA: 2,
@@ -72,7 +71,7 @@ module.exports = {
   UMBRAL_DIAS_ACTIVO: 2,           // FID-04: días
   DIF_CONVERSION: 1.5,             // FID-05: veces que convierten más los recurrentes que los nuevos
   UMBRAL_NO_REGRESAN: 0.70,        // FID-06: compradores con una sola sesión
-  UMBRAL_RECURRENTES_ALTA: 0.40,    // FID-07
+  UMBRAL_RECURRENTES_ALTA: 0.40,   // FID-07
 
   // --- Patrones secuenciales
   SOPORTE_SECUENCIAL: 0.10,   // PS-01 a PS-05: debe coincidir con soporte_secuencial de lectura_escritura.py
@@ -86,7 +85,7 @@ module.exports = {
   UMBRAL_SILHOUETTE: 0.25,                   // KM-05
   DIVISOR_TIEMPO_CONVERSION_USUARIO: 1000,   // KM-04: metricas.tiempoHastaConversion está en ms (verificar)
 
-    // --- Reglas de asociación (Apriori)
+  // --- Reglas de asociación (Apriori)
   UMBRAL_CONFIANZA: 0.60,   // AP-01 a AP-03: confianza mínima de la regla
   UMBRAL_LIFT: 1.5,         // AP-01 a AP-04: lift mínimo de la regla
   FRAGMENTOS_PAGINAS_EMBUDO: ["carrito", "checkout", "pago", "envio", "confirmacion", "registro", "login"],

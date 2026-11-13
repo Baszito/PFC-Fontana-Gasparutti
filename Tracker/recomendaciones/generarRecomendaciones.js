@@ -3,7 +3,7 @@
 -------------------------- -------------------------*/
 // Etapa "Generación de recomendación base" del diagrama, con la Ponderación adentro.
 // Recibe el contexto de UN sitio (de leerContextos) y los parámetros; no toca la base.
-// Evalúa las reglas de catalogo.js (hoy las 5 etapas del funnel, sin análisis).
+// Evalúa las reglas de catalogo.js (las 5 etapas del funnel y las de análisis).
 //
 // Devuelve:
 //   recomendaciones  reglas disparadas con puntaje, ordenadas de mayor a menor
@@ -15,6 +15,10 @@
 
 const { REGLAS, VERSION } = require("./catalogo");
 const { ponderar } = require("./ponderar");
+
+// La acción puede ser un texto fijo o una función de la evidencia (reglas de Random Forest)
+const accionDe = (regla, evidencia) =>
+  typeof regla.accion === "function" ? regla.accion(evidencia) : regla.accion;
 
 function generarRecomendaciones(contexto, P, reglas = REGLAS) {
   const recomendaciones = [];
@@ -34,7 +38,7 @@ function generarRecomendaciones(contexto, P, reglas = REGLAS) {
     for (const r of [].concat(e)) {
       if (regla.tipo === "Calidad de datos" || regla.tipo === "Fortaleza") {
         const aviso = { id: regla.id, siteId: contexto.siteId, etapa: regla.etapa, tipo: regla.tipo, esfuerzo: regla.esfuerzo,
-                        texto: regla.texto(r.evidencia), accion: regla.accion, evidencia: r.evidencia, catalogoVersion: VERSION };
+                        texto: regla.texto(r.evidencia), accion: accionDe(regla, r.evidencia), evidencia: r.evidencia, catalogoVersion: VERSION };
         (regla.tipo === "Calidad de datos" ? calidad : fortalezas).push(aviso);
         continue;
       }
@@ -45,10 +49,10 @@ function generarRecomendaciones(contexto, P, reglas = REGLAS) {
         etapa: regla.etapa,
         tipo: regla.tipo,
         texto: regla.texto(r.evidencia),
-        accion: regla.accion,
+        accion: accionDe(regla, r.evidencia),
         esfuerzo: regla.esfuerzo,
         impacto: regla.impacto,
-        ...ponderar(regla.impacto, r, P),     // severidad, alcance, puntaje, prioridad
+        ...ponderar(regla.impacto, r, P),     // severidad, alcance, confianza, puntaje, prioridad
         evidencia: r.evidencia,
         catalogoVersion: VERSION
       });

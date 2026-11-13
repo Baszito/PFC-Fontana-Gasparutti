@@ -1,8 +1,9 @@
 /*------------------------ ---------------------------
 -------------------------- Catalogo de reglas --------
 -------------------------- -------------------------*/
-// Las 34 reglas de las 5 etapas del funnel (ATR, INT, CON, ACC, FID), copiadas de
-// Recomendaciones_1_.xlsx. Las reglas de análisis (PS, KM, AP, RF) quedan afuera por ahora.
+// Las reglas de las 5 etapas del funnel (ATR, INT, CON, ACC, FID) y las de análisis
+// (PS patrones secuenciales, KM clusters, AP Apriori, RF Random Forest), copiadas de
+// Recomendaciones_1_.xlsx. Las de análisis solo se disparan si ctx.analisis trae el documento del período.
 // Cada regla es un objeto:
 //   id, etapa, tipo       tipo: "Variación" | "Umbral" | "Calidad de datos" | "Fortaleza"
 //   impacto (1-3), esfuerzo     impacto: 3 = influye en la conversión, 2 = paso intermedio / general, 1 = contexto general
@@ -19,13 +20,15 @@ const limitar = (x) => Math.min(1, Math.max(0, x));
 const pct = (x) => Math.round(x * 100);
 const esNumero = (x) => typeof x === "number" && Number.isFinite(x);
 
-// S1: el valor supera un umbral superior
-const severidadS1 = (valor, umbral) => limitar((valor - umbral) / umbral);
-// S2: el valor cae por debajo de un umbral inferior
+// S1: el valor supera un umbral superior.
+// `maximo` es el mayor valor posible de la métrica (1 para proporciones): ahí la severidad llega a 1.
+// Si no se indica, se toma el doble del umbral (métricas sin tope, como segundos o el lift).
+const severidadS1 = (valor, umbral, maximo = 2 * umbral) => limitar((valor - umbral) / (maximo - umbral));
+// S2: el valor está por debajo de un umbral inferior
 const severidadS2 = (valor, umbral) => limitar((umbral - valor) / umbral);
 // S3: la variación supera (en valor absoluto) la variación umbral
 const severidadS3 = (variacion, umbral) => limitar((Math.abs(variacion) - Math.abs(umbral)) / Math.abs(umbral));
-// S4: la variación supera (en valor absoluto) la variación umbral, y además el valor actual está por debajo de un umbral inferior
+// S4: proporción de un patrón respecto del soporte mínimo; llega a 1 cuando duplica el soporte mínimo
 const severidadS4 = (proporcion, soporteMin) => limitar(proporcion / (2 * soporteMin));
 
 
@@ -1056,4 +1059,4 @@ const REGLAS = [
   }
 ];
 
-module.exports = { VERSION: "1.0-funnel", REGLAS };
+module.exports = { VERSION: "2.0-funnel-analisis", REGLAS };
