@@ -374,8 +374,6 @@ const REGLAS = [
     texto: (ev) => `Gran parte de tus visitantes (${pct(ev.proporcion)}%) viene de un solo origen: ${ev.origen}.`,
     accion: "Diversificar los canales para no depender de uno solo."
   },
-
-
   {
     id: "PS-01", etapa: "Acción", tipo: "Fortaleza", impacto: 2, esfuerzo: "Bajo",
     evaluar: (ctx, P) => {
@@ -538,8 +536,9 @@ const REGLAS = [
     evaluar: (ctx, P) => {
       if (!ctx.usuarios || ctx.usuarios.activos < P.MIN_USUARIOS) return null;   // pocos usuarios: no es falta de estructura
       const doc = analisisVigente(ctx, "clusters");
-      if (doc && doc.silhouette > P.UMBRAL_SILHOUETTE) return null;
-      return { evidencia: { silhouette: doc ? doc.silhouette : null } };
+      if (!doc || !Number.isFinite(doc.silhouette)) return null;                 // sin análisis vigente no hay qué avisar
+      if (doc.silhouette > P.UMBRAL_SILHOUETTE) return null;
+      return { evidencia: { silhouette: doc.silhouette } };
     },
     texto: () => "Todavía no se distinguen tipos de visitantes claros en tu sitio.",
     accion: "Seguir acumulando datos: los perfiles aparecen con más visitantes."
