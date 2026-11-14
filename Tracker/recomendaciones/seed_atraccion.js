@@ -246,124 +246,124 @@ function construir() {
     "ATR-04: “La mayoría de las visitas (70%) entra por una sola página: /home.”");
   c(6, "ATR-05", "pais.top = AR con 540 de 600", { fPais: 0.90 },
     "ATR-05: “Casi todas las visitas (90%) provienen de AR.”");
-  c(7, "ATR-06", "movil = 420, desktop = 180", { fMovil: 0.70 },
-    "ATR-06: “La mayoría de las visitas (70%) llega desde un celular.”");
-  c(8, "ATR-07", "movil = 180, desktop = 420", { fMovil: 0.30 },
-    "ATR-07: “La mayoría de las visitas (70%) llega desde un ordenador.”");
-  c(9, "ATR-08", "origenes.top = google con 400 de 500", { fOrigen: 0.80 },
-    "ATR-08: “Gran parte de tus visitantes (80%) viene de un solo origen: google.”");
+  // c(7, "ATR-06", "movil = 420, desktop = 180", { fMovil: 0.70 },
+  //   "ATR-06: “La mayoría de las visitas (70%) llega desde un celular.”");
+  // c(8, "ATR-07", "movil = 180, desktop = 420", { fMovil: 0.30 },
+  //   "ATR-07: “La mayoría de las visitas (70%) llega desde un ordenador.”");
+  // c(9, "ATR-08", "origenes.top = google con 400 de 500", { fOrigen: 0.80 },
+  //   "ATR-08: “Gran parte de tus visitantes (80%) viene de un solo origen: google.”");
 
-  // --- Interés
-  c(10, "INT-01", "tasaRebote = 0.75 en act. y ant.", { actual: { tasaRebote: 0.75 }, anterior: { tasaRebote: 0.75 } },
-    "INT-01: “El 75% de las visitas se va sin interactuar con el sitio.”");
-  c(11, "INT-02", "act. tasaRebote = 0.50 (ant. 0.40)", { actual: { tasaRebote: 0.50 } },
-    "INT-02: “El abandono inmediato aumentó 25% respecto del período anterior.”");
-  c(12, "INT-03", "act. duracionSesionPromedio = 0.5", { actual: { duracionSesionPromedio: 0.5 } },
-    "INT-03: “Las visitas duran en promedio 0.5 minutos, un tiempo muy corto.”");
-  c(13, "INT-04", "act. paginasPorSesionPromedio = 1.2", { actual: { paginasPorSesionPromedio: 1.2 } },
-    "INT-04: “Cada visitante ve en promedio 1.2 páginas.”");
-  c(14, "INT-05", "/producto.scrollDepthPromedio = 0.30", { paginas: { "/producto": { scrollDepthPromedio: 0.30 } } },
-    "INT-05: “En /producto poca gente llega al final: el desplazamiento promedio es 30%.”");
-  c(15, "INT-06", "/producto.tiempoPromedioPagina = 5", { paginas: { "/producto": { tiempoPromedioPagina: 5 } } },
-    "INT-06: “La página /producto recibe muchas visitas pero se mira muy poco tiempo (5 s).”");
+  // // --- Interés
+  // c(10, "INT-01", "tasaRebote = 0.75 en act. y ant.", { actual: { tasaRebote: 0.75 }, anterior: { tasaRebote: 0.75 } },
+  //   "INT-01: “El 75% de las visitas se va sin interactuar con el sitio.”");
+  // c(11, "INT-02", "act. tasaRebote = 0.50 (ant. 0.40)", { actual: { tasaRebote: 0.50 } },
+  //   "INT-02: “El abandono inmediato aumentó 25% respecto del período anterior.”");
+  // c(12, "INT-03", "act. duracionSesionPromedio = 0.5", { actual: { duracionSesionPromedio: 0.5 } },
+  //   "INT-03: “Las visitas duran en promedio 0.5 minutos, un tiempo muy corto.”");
+  // c(13, "INT-04", "act. paginasPorSesionPromedio = 1.2", { actual: { paginasPorSesionPromedio: 1.2 } },
+  //   "INT-04: “Cada visitante ve en promedio 1.2 páginas.”");
+  // c(14, "INT-05", "/producto.scrollDepthPromedio = 0.30", { paginas: { "/producto": { scrollDepthPromedio: 0.30 } } },
+  //   "INT-05: “En /producto poca gente llega al final: el desplazamiento promedio es 30%.”");
+  // c(15, "INT-06", "/producto.tiempoPromedioPagina = 5", { paginas: { "/producto": { tiempoPromedioPagina: 5 } } },
+  //   "INT-06: “La página /producto recibe muchas visitas pero se mira muy poco tiempo (5 s).”");
 
-  // --- Consideración
-  c(16, "CON-01", "/home, elemento btn-comprar (meta compra) con hoverPromedio = 5",
-    { paginas: { "/home": { elementos: [{ elemento: "btn-comprar", goal: "compra", hoverPromedio: 5 }] } } },
-    "CON-01: “Los visitantes se detienen mucho tiempo sobre btn-comprar (5 s) antes de decidir.”");
-  c(17, "CON-02", "/producto.clicksMuertos = 50 (10 % de 500)", { paginas: { "/producto": { clicksMuertos: 50 } } },
-    "CON-02: “En /producto hay 50 clics sobre elementos que no responden.”");
-  c(18, "CON-03", "/producto.rageClicks = 25 (5 % de 500)", { paginas: { "/producto": { rageClicks: 25 } } },
-    "CON-03: “En /producto los visitantes hacen clics repetidos y rápidos, señal de frustración (25 casos).”");
-  c(19, "CON-04", "usuarios.interaccionesPromedio = 1.5", { usuarios: { interacciones: 1.5 } },
-    "CON-04: “Los visitantes interactúan poco con el sitio (1.5 acciones por visita).”");
-  c(20, "CON-05", "act. tiempoConversionPromedio = 500", { actual: { tiempoConversionPromedio: 500 } },
-    "CON-05: “Los visitantes que compran tardan en promedio 500 segundos en decidirse.”");
+  // // --- Consideración
+  // c(16, "CON-01", "/home, elemento btn-comprar (meta compra) con hoverPromedio = 5",
+  //   { paginas: { "/home": { elementos: [{ elemento: "btn-comprar", goal: "compra", hoverPromedio: 5 }] } } },
+  //   "CON-01: “Los visitantes se detienen mucho tiempo sobre btn-comprar (5 s) antes de decidir.”");
+  // c(17, "CON-02", "/producto.clicksMuertos = 50 (10 % de 500)", { paginas: { "/producto": { clicksMuertos: 50 } } },
+  //   "CON-02: “En /producto hay 50 clics sobre elementos que no responden.”");
+  // c(18, "CON-03", "/producto.rageClicks = 25 (5 % de 500)", { paginas: { "/producto": { rageClicks: 25 } } },
+  //   "CON-03: “En /producto los visitantes hacen clics repetidos y rápidos, señal de frustración (25 casos).”");
+  // c(19, "CON-04", "usuarios.interaccionesPromedio = 1.5", { usuarios: { interacciones: 1.5 } },
+  //   "CON-04: “Los visitantes interactúan poco con el sitio (1.5 acciones por visita).”");
+  // c(20, "CON-05", "act. tiempoConversionPromedio = 500", { actual: { tiempoConversionPromedio: 500 } },
+  //   "CON-05: “Los visitantes que compran tardan en promedio 500 segundos en decidirse.”");
 
-  // --- Acción
-  c(21, "ACC-01", "tasaConversion = 0.01 y totalSesiones = 400 en act. y ant.",
-    { actual: { totalSesiones: 400, tasaConversion: 0.01 }, anterior: { totalSesiones: 400, tasaConversion: 0.01 } },
-    "ACC-01: “Solo el 1% de las visitas termina en una compra o contacto.”");
-  c(22, "ACC-02", "ant. tasaConversion = 0.05, act. = 0.03", { actual: { tasaConversion: 0.03 }, anterior: { tasaConversion: 0.05 } },
-    "ACC-02: “La conversión cayó 40% respecto del período anterior.”");
-  c(23, "ACC-03", "tasaConversion = 0.01 en act. y ant. (sesiones 600)",
-    { actual: { tasaConversion: 0.01 }, anterior: { tasaConversion: 0.01 } },
-    ["ACC-03: “Tenés buen tráfico pero pocas conversiones: el desafío no es atraer más visitas, sino convertir.”",
-     "Y también ACC-01 (“Solo el 1%...”), porque ACC-03 siempre acompaña a ACC-01"]);
-  c(24, "ACC-04", "totalSesiones = 300 y tasaConversion = 0.06 en act. y ant.",
-    { actual: { totalSesiones: 300, tasaConversion: 0.06 }, anterior: { totalSesiones: 300, tasaConversion: 0.06 } },
-    "En fortalezas: ACC-04 “Tu sitio convierte bien (6%), pero recibe pocas visitas.” 0 recomendaciones");
-  c(25, "ACC-05", "carrito.abandonoCarrito = 54 (de 60)", { carrito: { con: 60, abandono: 54 } },
-    "ACC-05: “El 90% de quienes agregan productos al carrito no compra.”");
-  c(26, "ACC-06", "formulario contacto: tasaAbandono = 0.80, campoAbandonoMasComun = null",
-    { formularios: [{ formId: "contacto", total: 50, tasaAbandono: 0.80, campo: null }] },
-    "ACC-06: “El 80% de quienes empiezan el formulario contacto no lo terminan.” (ACC-07 no, falta el campo)");
-  c(27, "ACC-07", "formulario contacto: tasaAbandono = 0.80, campoAbandonoMasComun = “telefono”",
-    { formularios: [{ formId: "contacto", total: 50, tasaAbandono: 0.80, campo: "telefono" }] },
-    ["ACC-07: “La mayoría abandona el formulario contacto después del campo “telefono”.”", "Y también ACC-06"]);
-  c(28, "ACC-08", "paginaAbandono.top = /carrito con 300 de 600", { salidaTop: ["/carrito", 0.50] },
-    "ACC-08: “Muchas visitas terminan en /carrito (50%).”");
+  // // --- Acción
+  // c(21, "ACC-01", "tasaConversion = 0.01 y totalSesiones = 400 en act. y ant.",
+  //   { actual: { totalSesiones: 400, tasaConversion: 0.01 }, anterior: { totalSesiones: 400, tasaConversion: 0.01 } },
+  //   "ACC-01: “Solo el 1% de las visitas termina en una compra o contacto.”");
+  // c(22, "ACC-02", "ant. tasaConversion = 0.05, act. = 0.03", { actual: { tasaConversion: 0.03 }, anterior: { tasaConversion: 0.05 } },
+  //   "ACC-02: “La conversión cayó 40% respecto del período anterior.”");
+  // c(23, "ACC-03", "tasaConversion = 0.01 en act. y ant. (sesiones 600)",
+  //   { actual: { tasaConversion: 0.01 }, anterior: { tasaConversion: 0.01 } },
+  //   ["ACC-03: “Tenés buen tráfico pero pocas conversiones: el desafío no es atraer más visitas, sino convertir.”",
+  //    "Y también ACC-01 (“Solo el 1%...”), porque ACC-03 siempre acompaña a ACC-01"]);
+  // c(24, "ACC-04", "totalSesiones = 300 y tasaConversion = 0.06 en act. y ant.",
+  //   { actual: { totalSesiones: 300, tasaConversion: 0.06 }, anterior: { totalSesiones: 300, tasaConversion: 0.06 } },
+  //   "En fortalezas: ACC-04 “Tu sitio convierte bien (6%), pero recibe pocas visitas.” 0 recomendaciones");
+  // c(25, "ACC-05", "carrito.abandonoCarrito = 54 (de 60)", { carrito: { con: 60, abandono: 54 } },
+  //   "ACC-05: “El 90% de quienes agregan productos al carrito no compra.”");
+  // c(26, "ACC-06", "formulario contacto: tasaAbandono = 0.80, campoAbandonoMasComun = null",
+  //   { formularios: [{ formId: "contacto", total: 50, tasaAbandono: 0.80, campo: null }] },
+  //   "ACC-06: “El 80% de quienes empiezan el formulario contacto no lo terminan.” (ACC-07 no, falta el campo)");
+  // c(27, "ACC-07", "formulario contacto: tasaAbandono = 0.80, campoAbandonoMasComun = “telefono”",
+  //   { formularios: [{ formId: "contacto", total: 50, tasaAbandono: 0.80, campo: "telefono" }] },
+  //   ["ACC-07: “La mayoría abandona el formulario contacto después del campo “telefono”.”", "Y también ACC-06"]);
+  // c(28, "ACC-08", "paginaAbandono.top = /carrito con 300 de 600", { salidaTop: ["/carrito", 0.50] },
+  //   "ACC-08: “Muchas visitas terminan en /carrito (50%).”");
 
-  // --- Fidelización
-  c(29, "FID-01", "usuariosRecurrentes = 60 (de 600) en act. y ant.",
-    { actual: { usuariosRecurrentes: 60 }, anterior: { usuariosRecurrentes: 60 } },
-    "FID-01: “Solo el 10% de tus visitantes vuelve al sitio.”");
-  c(30, "FID-02", "ant. usuariosRecurrentes = 240 (40 %), act. 180 (30 %)", { anterior: { usuariosRecurrentes: 240 } },
-    "FID-02: “La proporción de visitantes que vuelve bajó 25% respecto del período anterior.”");
-  c(31, "FID-03", "recurrentes.frecuenciaPromedio = 0.1", { usuarios: { recFrecuencia: 0.1 } },
-    "FID-03: “Quienes vuelven lo hacen de forma espaciada.”");
-  c(32, "FID-04", "diasActivoPromedio = 1", { usuarios: { dias: 1 } },
-    "FID-04: “La relación de los visitantes con el sitio dura pocos días.”");
-  c(33, "FID-05", "recurrentes.tasaConversionPromedio = 0.10 (nuevos 0.04)", { usuarios: { recConversion: 0.10 } },
-    "En fortalezas: FID-05 “Quienes vuelven compran más que quienes llegan por primera vez.”");
-  c(34, "FID-06", "compradores.unaSesion = 36 (de 40)", { compradores: { total: 40, unaSesion: 36 } },
-    "FID-06: “El 90% de quienes compran no vuelve al sitio.”");
-  c(35, "FID-07", "act. usuariosRecurrentes = 300 (50 % de 600)", { actual: { usuariosRecurrentes: 300 } },
-    "En fortalezas: FID-07 “Una buena parte de tus visitantes (50%) vuelve al sitio: tenés una base fiel.”");
+  // // --- Fidelización
+  // c(29, "FID-01", "usuariosRecurrentes = 60 (de 600) en act. y ant.",
+  //   { actual: { usuariosRecurrentes: 60 }, anterior: { usuariosRecurrentes: 60 } },
+  //   "FID-01: “Solo el 10% de tus visitantes vuelve al sitio.”");
+  // c(30, "FID-02", "ant. usuariosRecurrentes = 240 (40 %), act. 180 (30 %)", { anterior: { usuariosRecurrentes: 240 } },
+  //   "FID-02: “La proporción de visitantes que vuelve bajó 25% respecto del período anterior.”");
+  // c(31, "FID-03", "recurrentes.frecuenciaPromedio = 0.1", { usuarios: { recFrecuencia: 0.1 } },
+  //   "FID-03: “Quienes vuelven lo hacen de forma espaciada.”");
+  // c(32, "FID-04", "diasActivoPromedio = 1", { usuarios: { dias: 1 } },
+  //   "FID-04: “La relación de los visitantes con el sitio dura pocos días.”");
+  // c(33, "FID-05", "recurrentes.tasaConversionPromedio = 0.10 (nuevos 0.04)", { usuarios: { recConversion: 0.10 } },
+  //   "En fortalezas: FID-05 “Quienes vuelven compran más que quienes llegan por primera vez.”");
+  // c(34, "FID-06", "compradores.unaSesion = 36 (de 40)", { compradores: { total: 40, unaSesion: 36 } },
+  //   "FID-06: “El 90% de quienes compran no vuelve al sitio.”");
+  // c(35, "FID-07", "act. usuariosRecurrentes = 300 (50 % de 600)", { actual: { usuariosRecurrentes: 300 } },
+  //   "En fortalezas: FID-07 “Una buena parte de tus visitantes (50%) vuelve al sitio: tenés una base fiel.”");
 
-  // --- Transversales
-  c(36, "ATR-04", "Umbral exacto: paginaInicio.top con 360 de 600 (60 %)", { fEntrada: 0.60 },
-    "No se genera: el umbral exige superar el 60 %");
-  c(37, "ATR-02", "Umbral exacto: ant.totalSesiones = 750 (act. 600, −20 %)", { anterior: { totalSesiones: 750 } },
-    "No se genera: la caída tiene que superar el 20 %");
-  c(38, "INT-01", "Datos insuficientes: totalSesiones = 20 y tasaRebote = 0.9 en act. y ant.",
-    { actual: { totalSesiones: 20, tasaRebote: 0.9 }, anterior: { totalSesiones: 20, tasaRebote: 0.9 }, usuarios: { activos: 15 } },
-    "Solo el aviso ATR-03 en calidad. INT-01 no se genera (mínimo 30 sesiones)");
-  c(39, "INT-05, CON-03", "Datos insuficientes: /producto.pageviews = 10, scroll 0.1, rageClicks 5",
-    { paginas: { "/producto": { pageviews: 10, scrollDepthPromedio: 0.1, rageClicks: 5 } } },
-    "No se genera INT-05 ni CON-03 (mínimo 20 visitas por página)");
-  c(40, "ACC-06, ACC-07", "Datos insuficientes: contacto con total = 8 y tasaAbandono = 0.9",
-    { formularios: [{ formId: "contacto", total: 8, tasaAbandono: 0.9, campo: "telefono" }] },
-    "No se genera ACC-06 ni ACC-07 (mínimo 10 formularios)");
-  c(41, "ACC-05", "Datos insuficientes: conCarrito = 8, abandonoCarrito = 8", { carrito: { con: 8, abandono: 8 } },
-    "No se genera ACC-05 (mínimo 10 carritos)");
-  c(42, "CON-04, FID-04", "Datos insuficientes: activos = 10, interaccionesPromedio = 1, diasActivoPromedio = 1",
-    { usuarios: { activos: 10, interacciones: 1, dias: 1 }, compradores: { total: 0, unaSesion: 0 } },
-    "No se genera CON-04 ni FID-04 (mínimo 20 usuarios)");
-  // E4-M1-43, 44 y 51: no se siembran (ver el encabezado)
-  c(45, "ATR-01, ATR-02, ATR-03, ACC-02", "Período vacío: act. = ventana vacía (totalSesiones 0, usuariosNuevos 0, resto null); ant. = base",
-    { vacio: true },
-    ["ATR-01 (100 % menos), ATR-02 (cayó 100 %) y ACC-02 (cayó 100 %); en calidad ATR-03 con “(0)”.",
-     "Observación: hoy ACC-02 se genera con un período vacío; confirmar si es lo deseado"]);
-  c(46, "ATR-01, ATR-02, INT-02, ACC-02, FID-02", "Sin período anterior: ant. = null", { anterior: null },
-    "Sin error. Las reglas de variación no se evalúan. 0 recomendaciones");
-  c(47, "INT-05", "Varias páginas: /producto.scroll = 0.30 y /contacto.scroll = 0.20",
-    { paginas: { "/producto": { scrollDepthPromedio: 0.30 }, "/contacto": { scrollDepthPromedio: 0.20 } } },
-    "2 recomendaciones INT-05, una por página (30 % y 20 %)");
-  c(48, "CON-01", "Varios elementos: /home con btn-comprar (meta compra, hover 5), btn-suscribir (meta suscripcion, hover 4) y logo (sin meta, hover 9)",
-    { paginas: { "/home": { elementos: [
-        { elemento: "btn-comprar", goal: "compra", hoverPromedio: 5 },
-        { elemento: "btn-suscribir", goal: "suscripcion", hoverPromedio: 4 },
-        { elemento: "logo", hoverPromedio: 9 }] } } },
-    "2 recomendaciones CON-01 (btn-comprar 5 s, btn-suscribir 4 s). El elemento sin meta no genera");
-  c(49, "ACC-06", "Varios formularios: contacto (total 50, abandono 0.80) y cotizacion (total 30, abandono 0.70), sin campo",
-    { formularios: [
-        { formId: "contacto", total: 50, tasaAbandono: 0.80, campo: null },
-        { formId: "cotizacion", total: 30, tasaAbandono: 0.70, campo: null }] },
-    "2 recomendaciones ACC-06: una con 80 % para contacto y otra con 70 % para cotizacion");
-  c(50, "FID-05, FID-07", "Dos fortalezas a la vez: act. usuariosRecurrentes = 300; recurrentes.tasaConversionPromedio = 0.10 (nuevos 0.04)",
-    { actual: { usuariosRecurrentes: 300 }, usuarios: { recConversion: 0.10 } },
-    "2 fortalezas en fortalezas (FID-05 y FID-07). 0 recomendaciones");
+  // // --- Transversales
+  // c(36, "ATR-04", "Umbral exacto: paginaInicio.top con 360 de 600 (60 %)", { fEntrada: 0.60 },
+  //   "No se genera: el umbral exige superar el 60 %");
+  // c(37, "ATR-02", "Umbral exacto: ant.totalSesiones = 750 (act. 600, −20 %)", { anterior: { totalSesiones: 750 } },
+  //   "No se genera: la caída tiene que superar el 20 %");
+  // c(38, "INT-01", "Datos insuficientes: totalSesiones = 20 y tasaRebote = 0.9 en act. y ant.",
+  //   { actual: { totalSesiones: 20, tasaRebote: 0.9 }, anterior: { totalSesiones: 20, tasaRebote: 0.9 }, usuarios: { activos: 15 } },
+  //   "Solo el aviso ATR-03 en calidad. INT-01 no se genera (mínimo 30 sesiones)");
+  // c(39, "INT-05, CON-03", "Datos insuficientes: /producto.pageviews = 10, scroll 0.1, rageClicks 5",
+  //   { paginas: { "/producto": { pageviews: 10, scrollDepthPromedio: 0.1, rageClicks: 5 } } },
+  //   "No se genera INT-05 ni CON-03 (mínimo 20 visitas por página)");
+  // c(40, "ACC-06, ACC-07", "Datos insuficientes: contacto con total = 8 y tasaAbandono = 0.9",
+  //   { formularios: [{ formId: "contacto", total: 8, tasaAbandono: 0.9, campo: "telefono" }] },
+  //   "No se genera ACC-06 ni ACC-07 (mínimo 10 formularios)");
+  // c(41, "ACC-05", "Datos insuficientes: conCarrito = 8, abandonoCarrito = 8", { carrito: { con: 8, abandono: 8 } },
+  //   "No se genera ACC-05 (mínimo 10 carritos)");
+  // c(42, "CON-04, FID-04", "Datos insuficientes: activos = 10, interaccionesPromedio = 1, diasActivoPromedio = 1",
+  //   { usuarios: { activos: 10, interacciones: 1, dias: 1 }, compradores: { total: 0, unaSesion: 0 } },
+  //   "No se genera CON-04 ni FID-04 (mínimo 20 usuarios)");
+  // // E4-M1-43, 44 y 51: no se siembran (ver el encabezado)
+  // c(45, "ATR-01, ATR-02, ATR-03, ACC-02", "Período vacío: act. = ventana vacía (totalSesiones 0, usuariosNuevos 0, resto null); ant. = base",
+  //   { vacio: true },
+  //   ["ATR-01 (100 % menos), ATR-02 (cayó 100 %) y ACC-02 (cayó 100 %); en calidad ATR-03 con “(0)”.",
+  //    "Observación: hoy ACC-02 se genera con un período vacío; confirmar si es lo deseado"]);
+  // c(46, "ATR-01, ATR-02, INT-02, ACC-02, FID-02", "Sin período anterior: ant. = null", { anterior: null },
+  //   "Sin error. Las reglas de variación no se evalúan. 0 recomendaciones");
+  // c(47, "INT-05", "Varias páginas: /producto.scroll = 0.30 y /contacto.scroll = 0.20",
+  //   { paginas: { "/producto": { scrollDepthPromedio: 0.30 }, "/contacto": { scrollDepthPromedio: 0.20 } } },
+  //   "2 recomendaciones INT-05, una por página (30 % y 20 %)");
+  // c(48, "CON-01", "Varios elementos: /home con btn-comprar (meta compra, hover 5), btn-suscribir (meta suscripcion, hover 4) y logo (sin meta, hover 9)",
+  //   { paginas: { "/home": { elementos: [
+  //       { elemento: "btn-comprar", goal: "compra", hoverPromedio: 5 },
+  //       { elemento: "btn-suscribir", goal: "suscripcion", hoverPromedio: 4 },
+  //       { elemento: "logo", hoverPromedio: 9 }] } } },
+  //   "2 recomendaciones CON-01 (btn-comprar 5 s, btn-suscribir 4 s). El elemento sin meta no genera");
+  // c(49, "ACC-06", "Varios formularios: contacto (total 50, abandono 0.80) y cotizacion (total 30, abandono 0.70), sin campo",
+  //   { formularios: [
+  //       { formId: "contacto", total: 50, tasaAbandono: 0.80, campo: null },
+  //       { formId: "cotizacion", total: 30, tasaAbandono: 0.70, campo: null }] },
+  //   "2 recomendaciones ACC-06: una con 80 % para contacto y otra con 70 % para cotizacion");
+  // c(50, "FID-05, FID-07", "Dos fortalezas a la vez: act. usuariosRecurrentes = 300; recurrentes.tasaConversionPromedio = 0.10 (nuevos 0.04)",
+  //   { actual: { usuariosRecurrentes: 300 }, usuarios: { recConversion: 0.10 } },
+  //   "2 fortalezas en fortalezas (FID-05 y FID-07). 0 recomendaciones");
 
   return L;
 }

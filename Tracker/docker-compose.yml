@@ -63,6 +63,8 @@ services:
   recomendaciones:
     build: ./recomendaciones
     command: node recomendaciones.js
+    env_file:
+      - ./recomendaciones/.env
     depends_on:
       - mongo
 

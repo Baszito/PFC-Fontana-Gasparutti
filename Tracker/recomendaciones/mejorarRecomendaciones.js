@@ -1,96 +1,92 @@
+const { mejorarRecomendaciones } = require("./mejora");
 
-import "dotenv/config";
-import { MongoClient } from "mongodb";
-import { mejorarRecomendaciones } from "./mejorarRecomendaciones.js";
+// SOLO PARA PRUEBAS: procesa únicamente los sitios de la seed de atracción.
+// En producción poner null para procesar todos los sitios.
+const FILTRO_SITIOS = /^TEST_M1_/;
 
-const uri = "mongodb://mongo:27017";
-const client = new MongoClient(uri);
+// Recomendaciones pendientes: todavía sin mejorar y con texto y acción
+function filtroPendientes(siteId) {
+    const filtro = {
+        mejorada: { $exists: false },
+        texto: { $type: "string", $ne: "" },
+        accion: { $type: "string", $ne: "" }
+    };
+    const sitio = siteId ?? FILTRO_SITIOS;
+    if (sitio) filtro.siteId = sitio;
+    return filtro;
+}
 
-async function procesarRecomendaciones() {
+// Recibe la base de datos del orquestador: no abre ni cierra conexiones.
+// Para cada sitio con recomendaciones pendientes hace una llamada a Claude y guarda
+// mejorada = { texto, accion } en cada documento.
+async function procesarRecomendaciones(db) {
 
-    try {
-        await client.connect();
+    const coleccion = db.collection("recomendaciones");
 
-        const db = client.db("PruebaBBDD");
-        const coleccion = db.collection("recomendaciones");
+    // Obtener los sitios con recomendaciones pendientes
+    const sitios = await coleccion.distinct("siteId", filtroPendientes());
 
-        // Obtener los sitios con recomendaciones pendientes
-        const sitios = await coleccion.distinct("siteId", {
-            mejorada: { $exists: false },
-            accion: { $type: "string", $ne: "" }
-        });
+    console.log(`Sitios pendientes: ${sitios.length}`);
 
-        console.log(`Sitios pendientes: ${sitios.length}`);
+    for (const siteId of sitios) {
 
-        for (const siteId of sitios) {
+        console.log(`Procesando sitio: ${siteId}`);
 
-            console.log(`Procesando sitio: ${siteId}`);
-
-            // Obtener todas las recomendaciones pendientes del sitio
-            const documentos = await coleccion.find({
-                siteId: siteId,
-                mejorada: { $exists: false },
-                accion: { $type: "string", $ne: "" }
-            })
-            .project({ _id: 1, accion: 1 })
+        // Obtener todas las recomendaciones pendientes del sitio
+        const documentos = await coleccion.find(filtroPendientes(siteId))
+            .project({ _id: 1, texto: 1, accion: 1 })
             .toArray();
 
-            if (documentos.length === 0) continue;
+        if (documentos.length === 0) continue;
 
-            try {
+        try {
 
-                // Crear vector de recomendaciones
-                const acciones = documentos.map(doc => doc.accion);
+            // Vector de recomendaciones: cada una es un par [texto, acción]
+            const recomendaciones = documentos.map(doc => [doc.texto, doc.accion]);
 
-                // Una única llamada a Claude por sitio
-                const mejoradas = await mejorarRecomendaciones(acciones);
+            // Una única llamada a Claude por sitio
+            const mejoradas = await mejorarRecomendaciones(recomendaciones);
 
-                // Preparar actualizaciones
-                const operaciones = documentos.map((doc, index) => ({
-                    updateOne: {
-                        filter: {
-                            _id: doc._id,
-                            mejorada: { $exists: false }
-                        },
-                        update: {
-                            $set: {
-                                mejorada: mejoradas[index]
+            // Preparar actualizaciones: mejorada = { texto, accion }
+            const operaciones = documentos.map((doc, index) => ({
+                updateOne: {
+                    filter: {
+                        _id: doc._id,
+                        mejorada: { $exists: false }
+                    },
+                    update: {
+                        $set: {
+                            mejorada: {
+                                texto: mejoradas[index][0],
+                                accion: mejoradas[index][1]
                             }
                         }
                     }
-                }));
+                }
+            }));
 
-                // Actualizar todos los documentos
-                const resultado = await coleccion.bulkWrite(
-                    operaciones,
-                    { ordered: false }
-                );
+            // Actualizar todos los documentos
+            const resultado = await coleccion.bulkWrite(
+                operaciones,
+                { ordered: false }
+            );
 
-                console.log(
-                    `Sitio ${siteId}: ${resultado.modifiedCount} recomendaciones mejoradas.`
-                );
+            console.log(
+                `Sitio ${siteId}: ${resultado.modifiedCount} recomendaciones mejoradas.`
+            );
 
-            } catch (error) {
+        } catch (error) {
 
-                console.error(
-                    `Error procesando sitio ${siteId}:`,
-                    error.message
-                );
+            // Un sitio que falla no frena a los demás
+            console.error(
+                `Error procesando sitio ${siteId}:`,
+                error.message
+            );
 
-            }
         }
-
-        console.log("Proceso finalizado.");
-
-    } catch (error) {
-
-        console.error("Error general:", error);
-
-    } finally {
-
-        await client.close();
-
     }
+
+    console.log("Mejora con IA finalizada.");
 }
 
-procesarRecomendaciones();
+module.exports = { procesarRecomendaciones };
