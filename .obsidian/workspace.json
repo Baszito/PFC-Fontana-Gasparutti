@@ -11,10 +11,14 @@
             "id": "df1ffc5cdaf73c14",
             "type": "leaf",
             "state": {
-              "type": "empty",
-              "state": {},
+              "type": "markdown",
+              "state": {
+                "file": "Documentacion/Generación de recomendaciones/APIs de IAs.md",
+                "mode": "source",
+                "source": false
+              },
               "icon": "lucide-file",
-              "title": "Nueva pestaña"
+              "title": "APIs de IAs"
             }
           }
         ]
@@ -79,7 +83,8 @@
       }
     ],
     "direction": "horizontal",
-    "width": 200
+    "width": 200,
+    "collapsed": true
   },
   "right": {
     "id": "1464c840b5697522",
@@ -183,6 +188,7 @@
   },
   "active": "df1ffc5cdaf73c14",
   "lastOpenFiles": [
+    "Tracker/recomendaciones/leerContextos.js",
     "Documentacion/Generación de recomendaciones/APIs de IAs.md",
     "Documentacion/Análisis/Algoritmo A-priori.md",
     "Documentacion/Generación de recomendaciones/Deployment.png",
