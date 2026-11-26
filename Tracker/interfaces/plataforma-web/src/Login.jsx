@@ -16,7 +16,7 @@ export default function Login() {
       credentials: 'include',
       body: JSON.stringify({ usuario, password })
     });
-    if (r.ok) navigate('/recomendaciones');
+    if (r.ok) setError('Sesión iniciada correctamente');
     else setError((await r.json()).error || 'No se pudo iniciar sesión');
   }
 
